@@ -47,6 +47,13 @@ const routes = [
         component: () => import('../views/Inventory.vue'),
         meta: { title: '配件库存' }
       },
+      // --- 新增：字典表管理 ---
+      {
+        path: '/dictionary',
+        name: 'Dictionary',
+        component: () => import('../views/Dictionary.vue'),
+        meta: { title: '字典表管理' }
+      },
       {
         path: '/profile',
         name: 'Profile',

@@ -1,27 +1,28 @@
 <template>
-  <div class="login-container">
+  <div class="login-container chinese-theme">
     <div class="login-wrapper">
-      <!-- 左侧海报区 -->
+      <!-- 左侧海报区：水墨意境 -->
       <div class="login-banner">
+        <div class="mask-layer"></div>
         <div class="banner-content">
           <div class="brand">
-            <el-icon :size="40">
-              <Van />
-            </el-icon>
-            <h1>Future Auto</h1>
+            <div class="stamp-box">
+              <el-icon :size="32"><Van /></el-icon>
+            </div>
+            <h1 class="font-song">未来 · 智行</h1>
           </div>
-          <p class="slogan">智能驱动 · 卓越服务 · 极致体验</p>
+          <p class="slogan font-song">运筹帷幄 · 决胜千里</p>
         </div>
       </div>
 
-      <!-- 右侧表单区 -->
+      <!-- 右侧表单区：宣纸质感 -->
       <div class="login-form-box">
         <div class="form-header">
-          <h2>欢迎回来</h2>
+          <h2 class="font-song">欢迎归来</h2>
           <p>请登录您的管理账号</p>
         </div>
 
-        <el-form :model="loginForm" :rules="rules" ref="loginFormRef" size="large" class="custom-form">
+        <el-form :model="loginForm" :rules="rules" ref="loginFormRef" size="large" class="chinese-form">
           <el-form-item prop="username">
             <el-input v-model="loginForm.username" placeholder="请输入用户名" :prefix-icon="User" />
           </el-form-item>
@@ -31,12 +32,10 @@
           </el-form-item>
 
           <div class="form-footer">
-            <el-checkbox v-model="remember">记住我</el-checkbox>
+            <el-checkbox v-model="remember" class="chinese-checkbox">记住我</el-checkbox>
             <div>
-              <!-- 新增注册入口 -->
-              <router-link to="/register"
-                style="color: #64748b; text-decoration: none; font-size: 14px; margin-right: 15px">注册账号</router-link>
-              <el-link type="primary" :underline="false">忘记密码？</el-link>
+              <router-link to="/register" class="link-text">注册账号</router-link>
+              <el-link :underline="false" class="link-text">忘记密码？</el-link>
             </div>
           </div>
 
@@ -56,7 +55,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Van } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -72,16 +71,9 @@ const rules = {
 
 const handleLogin = async () => {
   try {
-    // 等待表单验证完成
     await loginFormRef.value.validate()
-    
     loading.value = true
-    // 直接调用并等待登录结果
-    const success = await userStore.login(
-      loginForm.value.username,
-      loginForm.value.password
-    )
-    
+    const success = await userStore.login(loginForm.value.username, loginForm.value.password)
     if (success) {
       ElMessage.success(`欢迎回来，${userStore.userInfo.name}`)
       router.push('/dashboard')
@@ -89,125 +81,197 @@ const handleLogin = async () => {
       ElMessage.error('用户名或密码错误')
     }
   } catch (error) {
-    // 处理验证错误
     ElMessage.warning('请正确填写表单')
   } finally {
     loading.value = false
   }
 }
-
 </script>
 
 <style scoped>
+/* 引入中文字体 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+
+/* 全局变量 */
+.chinese-theme {
+  --chinese-red: #C0392B;    /* 朱砂红 */
+  --chinese-gold: #D4AC0D;   /* 帝王金 */
+  --chinese-ink: #2C3E50;    /* 水墨黑 */
+  --rice-paper: #FDFBF7;     /* 宣纸白 */
+  --bg-color: #F0EFE2;       /* 背景米色 */
+}
+
+.font-song {
+  font-family: 'Noto Serif SC', 'SimSun', serif;
+}
+
 .login-container {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f8fafc;
+  background-color: var(--bg-color);
+  background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
 }
 
 .login-wrapper {
   width: 900px;
   height: 550px;
   display: flex;
-  background: white;
-  border-radius: 20px;
+  background: var(--rice-paper);
+  border-radius: 8px; /* 圆角改小，更方正 */
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(44, 62, 80, 0.15);
+  border: 1px solid #E5E0D5;
 }
 
+/* 左侧海报区 */
 .login-banner {
   flex: 1.2;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)),
-    url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+  position: relative;
+  /* 使用更具中国风的图片：建筑、山水 */
+  background: url('https://images.unsplash.com/photo-1542300057-b02674e2d4d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'); 
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  padding: 40px;
+}
+
+/* 遮罩层，让文字更清晰，且带点墨色 */
+.mask-layer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.6));
 }
 
 .banner-content {
+  position: relative;
+  z-index: 2;
   text-align: center;
+  border: 2px solid rgba(255,255,255,0.3);
+  padding: 40px;
+  backdrop-filter: blur(2px);
 }
 
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+/* 红色印章风格图标 */
+.stamp-box {
+  width: 60px; height: 60px;
+  background-color: var(--chinese-red);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
 }
 
 .brand h1 {
-  font-size: 32px;
+  font-size: 36px;
   margin: 0;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 4px;
+  color: var(--chinese-gold);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .slogan {
-  font-size: 16px;
-  opacity: 0.8;
+  font-size: 18px;
+  opacity: 0.9;
   letter-spacing: 2px;
   margin-top: 10px;
+  font-weight: 300;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  padding-top: 10px;
 }
 
+/* 右侧表单区 */
 .login-form-box {
   flex: 1;
   padding: 50px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background-image: radial-gradient(var(--chinese-gold) 1px, transparent 1px);
+  background-size: 20px 20px; /* 点阵纹理 */
+  background-color: var(--rice-paper);
 }
 
-.form-header {
-  margin-bottom: 30px;
-}
-
+.form-header { margin-bottom: 30px; text-align: center; }
 .form-header h2 {
   margin: 0 0 10px;
   font-size: 28px;
-  color: #1e293b;
+  color: var(--chinese-ink);
+  letter-spacing: 2px;
 }
+.form-header p { margin: 0; color: #7f8c8d; font-size: 14px; }
 
-.form-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.custom-form .el-input__wrapper {
-  background-color: #f1f5f9;
+/* 输入框改造：底部横线风格 */
+:deep(.chinese-form .el-input__wrapper) {
+  background-color: transparent !important;
   box-shadow: none !important;
-  border-radius: 8px;
-  padding: 8px 15px;
+  border-bottom: 1px solid var(--chinese-ink) !important;
+  border-radius: 0;
+  padding: 10px 0;
+  transition: all 0.3s;
 }
-
-.custom-form .el-input__wrapper.is-focus {
-  background-color: white;
-  box-shadow: 0 0 0 2px #3b82f6 !important;
+:deep(.chinese-form .el-input__wrapper.is-focus) {
+  border-bottom-color: var(--chinese-red) !important;
 }
+:deep(.chinese-form .el-input__inner) {
+  color: var(--chinese-ink);
+  font-family: 'Noto Serif SC', serif;
+}
+/* 图标颜色 */
+:deep(.chinese-form .el-input__prefix-inner) { color: var(--chinese-ink); }
 
 .form-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
+.link-text {
+  color: #7f8c8d;
+  text-decoration: none;
+  font-size: 14px;
+  margin-left: 15px;
+  transition: color 0.3s;
+  font-family: 'Noto Serif SC', serif;
+}
+.link-text:hover { color: var(--chinese-red); }
+
+:deep(.chinese-checkbox .el-checkbox__label) { color: #7f8c8d; }
+:deep(.chinese-checkbox .el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: var(--chinese-red);
+  border-color: var(--chinese-red);
+}
+
+/* 按钮改造：印章风格 */
 .submit-btn {
   width: 100%;
   padding: 22px 0;
-  font-size: 16px;
-  background: linear-gradient(to right, #3b82f6, #2563eb);
+  font-size: 18px;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: bold;
+  letter-spacing: 4px;
+  background: var(--chinese-red);
   border: none;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  background: #A93226; /* 深红 */
+  box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3);
 }
 </style>
