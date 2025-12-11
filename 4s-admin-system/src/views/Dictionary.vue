@@ -27,6 +27,7 @@
             style="width: 200px; margin-right: 15px" 
             clearable 
             @clear="handleSearch" 
+            @keyup.enter="handleSearch"
           >
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
@@ -38,6 +39,7 @@
             style="width: 200px; margin-right: 15px" 
             clearable 
             @clear="handleSearch" 
+            @keyup.enter="handleSearch"
           >
             <template #prefix><el-icon><Collection /></el-icon></template>
           </el-input>
@@ -45,6 +47,11 @@
           <!-- 查询按钮 (水墨黑) -->
           <el-button class="chinese-btn primary" @click="handleSearch">
             <el-icon><Search /></el-icon> 检索
+          </el-button>
+
+          <!-- 新增：重置按钮 (素雅风格) -->
+          <el-button class="chinese-btn plain" @click="handleReset" style="margin-left: 10px;">
+            <el-icon><Refresh /></el-icon> 重置
           </el-button>
         </div>
         
@@ -56,6 +63,7 @@
 
       <!-- 表格区域 -->
       <el-table 
+        v-loading="loading"
         :data="tableData" 
         style="width: 100%; margin-top: 20px"
         class="chinese-table"
@@ -101,6 +109,20 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="queryParams.pageNum"
+          v-model:page-size="queryParams.pageSize"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          background
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <!-- 弹窗 -->
@@ -176,18 +198,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
-// 引入图标
-import { Search, Plus, EditPen, Delete, Select, Collection } from '@element-plus/icons-vue'
+// 引入 Refresh 图标
+import { Search, Plus, EditPen, Delete, Select, Collection, Refresh } from '@element-plus/icons-vue'
 
 // --- 状态定义 ---
-const queryParams = ref({ dictName: '', dictType: '' })
+const loading = ref(false)
+const total = ref(0)
 const dialogVisible = ref(false)
 const tableData = ref([])
 const fatherDictList = ref([])
 const categoryType = ref('general') 
+
+const queryParams = ref({ 
+  pageNum: 1, 
+  pageSize: 10,
+  dictName: '', 
+  dictType: '' 
+})
 
 const form = ref({ 
   id: null, 
@@ -202,16 +232,34 @@ const form = ref({
 // --- 方法定义 ---
 
 const loadData = async () => {
+  loading.value = true
   try {
     const res = await request.post('/dict/list', queryParams.value)
     if (res && res.data) {
-      tableData.value = res.data
+      const pageData = res.data || {}
+      tableData.value = pageData.records || []
+      total.value = Number(pageData.total) || 0
     } else {
       tableData.value = []
+      total.value = 0
     }
   } catch (error) {
+    console.error(error)
     ElMessage.error('获取字典列表失败')
+  } finally {
+    loading.value = false
   }
+}
+
+const handleSizeChange = (val) => {
+  queryParams.value.pageSize = val
+  queryParams.value.pageNum = 1 
+  loadData()
+}
+
+const handleCurrentChange = (val) => {
+  queryParams.value.pageNum = val
+  loadData()
 }
 
 const loadFatherDicts = async () => {
@@ -226,7 +274,17 @@ const loadFatherDicts = async () => {
 }
 
 const handleSearch = () => {
+  queryParams.value.pageNum = 1
   loadData()
+}
+
+// 新增：重置按钮逻辑
+const handleReset = () => {
+  queryParams.value.dictName = ''
+  queryParams.value.dictType = ''
+  queryParams.value.pageNum = 1
+  loadData()
+  ElMessage.success('已重置筛选条件')
 }
 
 const openDialog = async (row = null) => {
@@ -235,17 +293,13 @@ const openDialog = async (row = null) => {
   if (row) {
     form.value = { ...row }
     form.value.status = String(row.status)
-    
-    // 判断层级 (注意: fatherId 可能是字符串 '0' 或 数字 0)
     if (!row.fatherId || String(row.fatherId) === '0') {
       categoryType.value = 'general'
       form.value.fatherId = 0
     } else {
       categoryType.value = 'sub'
-      // 必须转为字符串以匹配下拉框 (因为 request.js 配置了 json-bigint 转 string)
       form.value.fatherId = String(row.fatherId)
     }
-    
   } else {
     categoryType.value = 'general'
     form.value = { 
@@ -317,19 +371,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 引入衬线字体 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
 
 .chinese-style-container {
-  --chinese-red: #C0392B;    /* 朱砂红 */
-  --chinese-gold: #D4AC0D;   /* 帝王金 */
-  --chinese-ink: #2C3E50;    /* 水墨黑 */
-  --chinese-border: #E5E0D5; /* 边框色 */
+  --chinese-red: #C0392B;    
+  --chinese-gold: #D4AC0D;   
+  --chinese-ink: #2C3E50;    
+  --chinese-border: #E5E0D5; 
   
   min-height: 100vh;
   padding: 20px;
   position: relative;
-  background-color: #F5F2EA; /* 米色底 */
+  background-color: #F5F2EA; 
 }
 
 /* 字体工具类 */
@@ -381,7 +434,7 @@ onMounted(() => {
 }
 .stamp-text {
   color: var(--chinese-red);
-  font-family: 'LiSu', 'SimSun', serif; /* 隶书 */
+  font-family: 'LiSu', 'SimSun', serif; 
   font-size: 24px;
   font-weight: bold;
 }
@@ -413,10 +466,7 @@ onMounted(() => {
 }
 .search-group { display: flex; align-items: center; }
 
-/* ================================================= */
 /* 按钮样式 */
-/* ================================================= */
-
 .chinese-btn {
   border-radius: 2px;
   font-family: 'Noto Serif SC', serif;
@@ -425,7 +475,6 @@ onMounted(() => {
   opacity: 1 !important;
 }
 
-/* 1. 查询按钮 (水墨黑) */
 .chinese-btn.primary, .chinese-btn.primary:hover, .chinese-btn.primary:focus {
   background-color: #2C3E50 !important;
   border-color: #2C3E50 !important;
@@ -433,21 +482,18 @@ onMounted(() => {
   opacity: 1 !important;
 }
 
-/* 2. 新增按钮 (帝王金) */
 .chinese-btn.gold, .chinese-btn.gold:hover, .chinese-btn.gold:focus {
   background-color: #D4AC0D !important;
   border-color: #D4AC0D !important;
   color: #fff !important;
 }
 
-/* 3. 取消按钮 (空心黑字) */
 .chinese-btn.plain, .chinese-btn.plain:hover, .chinese-btn.plain:focus {
   background-color: transparent !important;
   border: 1px solid #2C3E50 !important;
   color: #2C3E50 !important;
 }
 
-/* 4. 确认按钮 (朱砂红) */
 .chinese-btn.vermilion, .chinese-btn.vermilion:hover, .chinese-btn.vermilion:focus {
   background-color: #C0392B !important;
   border-color: #C0392B !important;
@@ -457,11 +503,9 @@ onMounted(() => {
   box-shadow: none !important;
 }
 
-/* ================================================= */
-
 .dialog-footer { text-align: center; padding-bottom: 10px; }
 
-/* 输入框样式覆盖 (底部横线) */
+/* 输入框样式覆盖 */
 :deep(.chinese-input .el-input__wrapper),
 :deep(.chinese-select .el-input__wrapper) {
   box-shadow: none !important;
@@ -505,7 +549,7 @@ onMounted(() => {
   font-weight: bold;
 }
 .seal-blue { color: #2980B9; border-color: #2980B9; }
-.seal-red  { color: #7F8C8D; border-color: #7F8C8D; border-style: dashed; } /* 停用用灰色虚线 */
+.seal-red  { color: #7F8C8D; border-color: #7F8C8D; border-style: dashed; } 
 
 /* 操作链接 */
 .action-btn { font-family: 'Noto Serif SC', serif; font-weight: 600; }
@@ -521,16 +565,6 @@ onMounted(() => {
 .cloud-pattern.top { margin-bottom: 20px; transform: rotate(180deg); }
 .cloud-pattern.bottom { margin-top: 20px; }
 
-/* 弹窗单选框美化 */
-:deep(.chinese-radio .el-radio__input.is-checked .el-radio__inner) {
-  border-color: var(--chinese-ink);
-  background: var(--chinese-ink);
-}
-:deep(.chinese-radio .el-radio__label) {
-  font-family: 'Noto Serif SC', serif;
-  color: var(--chinese-ink);
-}
-
 :global(.chinese-dialog .el-dialog__header) {
   border-bottom: 1px solid var(--chinese-border);
   margin-right: 0;
@@ -544,5 +578,58 @@ onMounted(() => {
 :global(.chinese-popper .el-select-dropdown__item.selected) {
   color: var(--chinese-red) !important;
   font-weight: bold;
+}
+
+/* --- 弹窗单选框美化 (红底+红点 = 视觉实心) --- */
+
+/* 1. 未选中状态 */
+:deep(.chinese-radio .el-radio__inner) {
+  border-color: #999; 
+  background-color: transparent;
+}
+:deep(.chinese-radio .el-radio__input:hover .el-radio__inner) {
+  border-color: var(--chinese-red);
+}
+
+/* 2. 选中状态：背景变成朱砂红，边框也是朱砂红 */
+:deep(.chinese-radio .el-radio__input.is-checked .el-radio__inner) {
+  background: var(--chinese-red) !important;
+  border-color: var(--chinese-red) !important;
+}
+
+/* 3. 选中状态：内部小白点也变成红色 (关键!) */
+:deep(.chinese-radio .el-radio__input.is-checked .el-radio__inner::after) {
+  background-color: var(--chinese-red) !important;
+  display: block !important;
+  content: "";
+  transform: translate(-50%, -50%) scale(1) !important;
+}
+
+/* 4. 选中状态：右侧文字 */
+:deep(.chinese-radio .el-radio__input.is-checked + .el-radio__label) {
+  color: var(--chinese-red) !important;
+  font-weight: bold;
+}
+
+/* 5. 未选中状态：文字 */
+:deep(.chinese-radio .el-radio__label) {
+  font-family: 'Noto Serif SC', serif;
+  color: var(--chinese-ink);
+}
+
+/* 分页组件样式定制 */
+.pagination-wrapper {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+}
+:deep(.el-pagination.is-background .el-pager li.is-active) {
+  background-color: var(--chinese-red) !important;
+  border-color: var(--chinese-red) !important;
+}
+:deep(.el-pagination.is-background .el-pager li) {
+  background-color: transparent;
+  border: 1px solid #D7DBDD;
+  font-family: 'Noto Serif SC', serif;
 }
 </style>

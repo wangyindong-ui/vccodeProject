@@ -58,3 +58,12 @@ export const useUserStore = defineStore('user', () => {
 
   return { token, userInfo, login, logout, updateProfile, register } // 记得导出 register
 })
+
+
+// 获取角色列表
+export function getRoleList() {
+  return request({
+    url: '/users/getRoles', // 假设您的后端接口地址是这个
+    method: 'get'
+  })
+}

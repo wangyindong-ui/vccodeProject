@@ -64,9 +64,9 @@
         class="chinese-table"
         header-row-class-name="chinese-header"
       >
-        <el-table-column prop="brand" label="品牌" min-width="125">
+     <el-table-column prop="brandName" label="品牌" min-width="125">
           <template #default="scope">
-            <span class="ink-text font-song">{{ scope.row.brand }}</span>
+            <span class="ink-text font-song">{{ scope.row.brandName }}</span>
           </template>
         </el-table-column>
 
@@ -102,9 +102,9 @@
 
         <el-table-column prop="status" label="状态" width="125">
           <template #default="scope">
-            <!-- 倾斜印章样式 -->
+            <!-- 状态修改：显示文字映射，样式根据数字判断 -->
             <div :class="['status-seal', getStatusClass(scope.row.status)]">
-              {{ scope.row.status }}
+              {{ getStatusText(scope.row.status) }}
             </div>
           </template>
         </el-table-column>
@@ -144,10 +144,10 @@
           <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%" />
         </el-form-item>
         <el-form-item label="销售状态">
+          <!-- 修改：value绑定为数字 1 和 2 -->
           <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%" popper-class="chinese-popper">
-            <el-option label="在售" value="在售" />
-            <el-option label="缺货" value="缺货" />
-            <el-option label="停售" value="停售" />
+            <el-option label="在售" :value="1" />
+            <el-option label="停售" :value="2" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -181,13 +181,14 @@ const queryParams = ref({
 const dialogVisible = ref(false)
 const tableData = ref([])
 
+// 修改：form 默认状态为 1 (在售)
 const form = ref({ 
   brand: '',
   model: '', 
   price: 0, 
   color: '', 
   stock: 1, 
-  status: '在售' 
+  status: 1 
 })
 
 const loadData = async () => {
@@ -219,7 +220,8 @@ const handleReset = () => {
 }
 
 const openDialog = () => {
-  form.value = { brand: '', model: '', price: 0, color: '', stock: 1, status: '在售' }
+  // 修改：默认状态为 1
+  form.value = { brand: '', model: '', price: 0, color: '', stock: 1, status: 1 }
   dialogVisible.value = true
 }
 
@@ -237,9 +239,17 @@ const handleAdd = async () => {
   }
 }
 
+// 新增：状态文字转换函数
+const getStatusText = (status) => {
+  if (status === 1) return '在售'
+  if (status === 2) return '停售'
+  return '未知'
+}
+
+// 修改：状态样式类名判断
 const getStatusClass = (status) => {
-  if (status === '在售') return 'seal-blue'
-  if (status === '缺货') return 'seal-red'
+  if (status === 1) return 'seal-blue' // 在售用蓝色
+  if (status === 2) return 'seal-red'  // 停售用红色/警示色
   return 'seal-gray'
 }
 
@@ -459,7 +469,7 @@ onMounted(() => {
 }
 .seal-gold { color: var(--chinese-gold); border-color: var(--chinese-gold); }
 .seal-blue { color: #2980B9; border-color: #2980B9; }
-.seal-red  { color: var(--chinese-red); border-color: var(--chinese-red); }
+.seal-red  { color: var(--chinese-red); border-color: var(--chinese-red); border-style: dashed;}
 .seal-gray { color: #7F8C8D; border-color: #7F8C8D; border-style: dashed;}
 
 /* 操作链接 */

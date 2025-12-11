@@ -60,6 +60,12 @@ const routes = [
         component: () => import('../views/Profile.vue'),
         meta: { title: '个人中心' }
       },
+      {
+        path: '/orders',
+        name: 'OrderList',
+        component: () => import('../views/OrderList.vue'),
+        meta: { title: '订单管理' }
+      },
             // --- 新增试驾预约路由 START ---
       {
         path: '/test-drive',

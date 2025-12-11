@@ -4,45 +4,60 @@
     <el-aside width="220px" class="chinese-aside">
       <div class="logo">
         <div class="stamp-icon">
-          <el-icon><Van /></el-icon>
+          <el-icon>
+            <Van />
+          </el-icon>
         </div>
         <span class="logo-text">4S · 雅集</span>
       </div>
-      
-      <el-menu 
-        router 
-        :default-active="$route.path" 
-        background-color="transparent" 
-        text-color="#bdc3c7"
-        active-text-color="#F1C40F"
-        class="chinese-menu"
-      >
+
+      <el-menu router :default-active="$route.path" background-color="transparent" text-color="#bdc3c7"
+        active-text-color="#F1C40F" class="chinese-menu">
         <el-menu-item index="/dashboard">
-          <el-icon><Odometer /></el-icon>
+          <el-icon>
+            <Odometer />
+          </el-icon>
           <span>首页概览</span>
         </el-menu-item>
+        <!-- 新增：订单管理 -->
+        <el-menu-item index="/orders">
+          <el-icon>
+            <Tickets />
+          </el-icon>
+          <span>订单管理</span>
+        </el-menu-item>
         <el-menu-item index="/cars">
-          <el-icon><Van /></el-icon>
+          <el-icon>
+            <Van />
+          </el-icon>
           <span>车库管理</span>
         </el-menu-item>
         <el-menu-item index="/service">
-          <el-icon><Tools /></el-icon>
+          <el-icon>
+            <Tools />
+          </el-icon>
           <span>售后维修</span>
         </el-menu-item>
         <el-menu-item index="/inventory">
-          <el-icon><Box /></el-icon>
+          <el-icon>
+            <Box />
+          </el-icon>
           <span>配件库存</span>
         </el-menu-item>
         <el-menu-item index="/test-drive">
-          <el-icon><Timer /></el-icon>
+          <el-icon>
+            <Timer />
+          </el-icon>
           <span>试驾预约</span>
         </el-menu-item>
         <el-menu-item index="/dictionary">
-          <el-icon><Notebook /></el-icon>
+          <el-icon>
+            <Notebook />
+          </el-icon>
           <span>字典管理</span>
         </el-menu-item>
       </el-menu>
-      
+
       <!-- 侧边栏底部云纹装饰 -->
       <div class="aside-footer-pattern"></div>
     </el-aside>
@@ -89,7 +104,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown } from '@element-plus/icons-vue'
+import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown, Tickets } from '@element-plus/icons-vue'
 
 // 初始化路由和状态仓库
 const router = useRouter()
@@ -115,11 +130,15 @@ const handleCommand = (command) => {
 /* 全局变量定义 */
 .chinese-theme {
   --ink-black: #2C3E50;
-  --vermilion: #C0392B; /* 朱砂红 */
-  --imperial-gold: #D4AC0D; /* 帝王金 */
-  --rice-paper: #F5F2EA; /* 宣纸色 */
+  --vermilion: #C0392B;
+  /* 朱砂红 */
+  --imperial-gold: #D4AC0D;
+  /* 帝王金 */
+  --rice-paper: #F5F2EA;
+  /* 宣纸色 */
   --border-color: #E5E0D5;
-  font-family: 'Noto Serif SC', 'SimSun', serif; /* 宋体/衬线体 */
+  font-family: 'Noto Serif SC', 'SimSun', serif;
+  /* 宋体/衬线体 */
 }
 
 .layout-container {
@@ -134,7 +153,8 @@ const handleCommand = (command) => {
   position: relative;
   border-right: 1px solid #1a252f;
   background-image: linear-gradient(rgba(44, 62, 80, 0.95), rgba(44, 62, 80, 0.95)),
-    url('https://www.transparenttextures.com/patterns/black-scales.png'); /* 隐约的纹理 */
+    url('https://www.transparenttextures.com/patterns/black-scales.png');
+  /* 隐约的纹理 */
 }
 
 .logo {
@@ -158,7 +178,7 @@ const handleCommand = (command) => {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   border: 2px solid #A93226;
 }
 
@@ -167,7 +187,8 @@ const handleCommand = (command) => {
   font-weight: bold;
   color: var(--imperial-gold);
   letter-spacing: 2px;
-  font-family: 'LiSu', 'SimSun', serif; /* 隶书或宋体 */
+  font-family: 'LiSu', 'SimSun', serif;
+  /* 隶书或宋体 */
 }
 
 /* 菜单项优化 */
@@ -192,7 +213,8 @@ const handleCommand = (command) => {
 
 /* 选中状态：新中式风格 (朱砂红左边框 + 金色文字 + 淡淡的背景) */
 :deep(.el-menu-item.is-active) {
-  background-color: rgba(192, 57, 43, 0.15) !important; /* 淡淡的朱红背景 */
+  background-color: rgba(192, 57, 43, 0.15) !important;
+  /* 淡淡的朱红背景 */
   color: var(--imperial-gold) !important;
   font-weight: bold;
   border: 1px solid var(--vermilion);
@@ -218,14 +240,15 @@ const handleCommand = (command) => {
   left: 0;
   width: 100%;
   height: 40px;
-  background-image: radial-gradient(circle at 50% 100%, rgba(255,255,255,0.1) 10px, transparent 11px);
+  background-image: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.1) 10px, transparent 11px);
   background-size: 20px 20px;
   opacity: 0.3;
 }
 
 /* --- 头部样式 --- */
 .chinese-header {
-  background-color: #FCFAF5; /* 亮宣纸色 */
+  background-color: #FCFAF5;
+  /* 亮宣纸色 */
   border-bottom: 1px solid #D6D0C4;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   display: flex;

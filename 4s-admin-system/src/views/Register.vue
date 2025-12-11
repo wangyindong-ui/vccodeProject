@@ -1,7 +1,7 @@
 <template>
   <div class="login-container chinese-theme">
     <div class="login-wrapper">
-      <!-- 左侧海报区 (复用风格) -->
+      <!-- 左侧海报区 -->
       <div class="login-banner">
         <div class="mask-layer"></div>
         <div class="banner-content">
@@ -47,9 +47,30 @@
             />
           </el-form-item>
 
-          <!-- 额外信息 -->
           <el-form-item prop="name">
             <el-input v-model="form.name" placeholder="您的姓名/昵称" :prefix-icon="Postcard" />
+          </el-form-item>
+
+          <!-- 角色选择下拉框 -->
+          <el-form-item prop="role">
+            <el-select 
+              v-model="form.role" 
+              placeholder="请选择角色" 
+              style="width: 100%" 
+              popper-class="chinese-popper"
+              :loading="roleLoading"
+            >
+              <template #prefix>
+                <el-icon><Flag /></el-icon>
+              </template>
+              <!-- 遍历接口返回的角色数据 -->
+              <el-option
+                v-for="item in roleOptions"
+                :key="item.id"
+                :label="item.roleName"
+                :value="item.id"
+              />
+            </el-select>
           </el-form-item>
 
           <el-form-item style="margin-top: 30px;">
@@ -71,23 +92,28 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Postcard, Van } from '@element-plus/icons-vue'
+import { User, Lock, Postcard, Van, Flag } from '@element-plus/icons-vue'
+import { getRoleList } from '../stores/user' 
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
+const roleLoading = ref(false)
+
+// 2. 定义存储角色的数组
+const roleOptions = ref([])
 
 const form = reactive({
   username: '',
   password: '',
   confirmPassword: '',
   name: '',
-  phone: '' 
+  role: '' // 这里存储选中的角色ID (后端需要的值)
 })
 
 const validatePass2 = (rule, value, callback) => {
@@ -104,7 +130,25 @@ const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码长度至少6位', trigger: 'blur' }],
   confirmPassword: [{ validator: validatePass2, trigger: 'blur' }],
-  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
+}
+
+// 3. 获取角色列表的方法
+const fetchRoleList = async () => {
+  roleLoading.value = true
+  try {
+    const res = await getRoleList()
+    // 假设后端返回格式为 { code: 200, data: [ {id: 101, roleName: '管理员'}, ... ] }
+    if (res.code === 200) {
+      roleOptions.value = res.data || []
+    }
+  } catch (error) {
+    console.error("获取角色列表失败", error)
+    ElMessage.warning('角色列表加载失败，请刷新重试')
+  } finally {
+    roleLoading.value = false
+  }
 }
 
 const handleRegister = () => {
@@ -115,7 +159,7 @@ const handleRegister = () => {
         username: form.username,
         password: form.password,
         name: form.name,
-        role: '员工' 
+        role: form.role // 这里传给后端的是 ID
       }
       const success = await userStore.register(submitData)
       if (success) {
@@ -126,10 +170,15 @@ const handleRegister = () => {
     }
   })
 }
+
+// 4. 页面加载时调用接口
+onMounted(() => {
+  fetchRoleList()
+})
 </script>
 
 <style scoped>
-/* 复用 Login.vue 的样式 */
+/* 样式保持不变 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
 
 .chinese-theme {
@@ -153,7 +202,7 @@ const handleRegister = () => {
 
 .login-wrapper {
   width: 900px;
-  height: 600px;
+  height: 650px; /* 增加高度以容纳新字段 */
   display: flex;
   background: var(--rice-paper);
   border-radius: 8px;
@@ -165,7 +214,6 @@ const handleRegister = () => {
 .login-banner {
   flex: 1.2;
   position: relative;
-  /* 使用另一张意境图 */
   background: url('https://images.unsplash.com/photo-1517504787944-9371059d7247?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'); 
   background-size: cover;
   background-position: center;
@@ -221,15 +269,17 @@ const handleRegister = () => {
 .form-header h2 { margin: 0 0 10px; font-size: 26px; color: var(--chinese-ink); letter-spacing: 2px; }
 .form-header p { margin: 0; color: #7f8c8d; font-size: 14px; }
 
-/* 输入框 */
-:deep(.chinese-form .el-input__wrapper) {
+/* 输入框 & 选择框 */
+:deep(.chinese-form .el-input__wrapper),
+:deep(.chinese-form .el-select__wrapper) {
   background-color: transparent !important;
   box-shadow: none !important;
   border-bottom: 1px solid var(--chinese-ink) !important;
   border-radius: 0;
   padding: 8px 0;
 }
-:deep(.chinese-form .el-input__wrapper.is-focus) {
+:deep(.chinese-form .el-input__wrapper.is-focus),
+:deep(.chinese-form .el-select__wrapper.is-focused) {
   border-bottom-color: var(--chinese-red) !important;
 }
 :deep(.chinese-form .el-input__inner) {
@@ -249,4 +299,17 @@ const handleRegister = () => {
   color: var(--chinese-ink); text-decoration: none; transition: color 0.3s;
 }
 .link-text:hover { color: var(--chinese-red); }
+</style>
+
+<!-- 下拉框全局样式 (无 scoped) -->
+<style>
+.chinese-popper .el-select-dropdown__item.selected {
+  color: #C0392B !important; /* 朱砂红 */
+  font-weight: bold;
+  font-family: 'Noto Serif SC', serif;
+}
+.chinese-popper .el-select-dropdown__item {
+  font-family: 'Noto Serif SC', serif;
+  color: #2C3E50;
+}
 </style>

@@ -77,8 +77,6 @@ const handleLogin = async () => {
     if (success) {
       ElMessage.success(`欢迎回来，${userStore.userInfo.name}`)
       router.push('/dashboard')
-    } else {
-      ElMessage.error('用户名或密码错误')
     }
   } catch (error) {
     ElMessage.warning('请正确填写表单')
