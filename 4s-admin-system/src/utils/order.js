@@ -36,11 +36,11 @@ export function dispatchOrder(data) {
 }
 
 // 5. 导出订单
-export function exportOrder(params) {
+export function exportOrder(queryData) {
   return request({
     url: '/orders/export',
     method: 'post',
-    params, 
+    data: queryData,   // ✅ 关键修改：必须用 data，不能用 params
     responseType: 'blob' 
   })
 }

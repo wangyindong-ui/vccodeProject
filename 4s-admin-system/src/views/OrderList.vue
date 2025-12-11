@@ -176,6 +176,40 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 4. 导出选项弹窗 (新增) -->
+    <el-dialog
+      v-model="exportVisible"
+      title="导出数据选项"
+      width="400px"
+      class="chinese-dialog"
+      append-to-body
+      :close-on-click-modal="false"
+    >
+      <div style="padding: 20px 10px;">
+        <el-form label-width="80px">
+          <el-form-item label="导出范围">
+            <el-radio-group v-model="exportType" class="chinese-radio-group">
+              <el-radio label="all">导出全部数据</el-radio>
+              <el-radio label="current">仅导出当前页</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <div class="tip-text" style="margin-left: 80px; color: #999; font-size: 12px;">
+            <span v-if="exportType === 'all'">将导出符合搜索条件的所有数据</span>
+            <span v-else>仅导出当前表格显示的 {{ queryParams.pageSize }} 条数据</span>
+          </div>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="chinese-btn-default-plain" @click="exportVisible = false">取消</el-button>
+          <el-button class="chinese-btn-vermilion-solid" :loading="exportLoading" @click="confirmExport">
+             <el-icon style="margin-right: 4px"><Download /></el-icon> 确认导出
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -184,6 +218,80 @@ import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh, Plus, Download, Select } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderList, addOrder, exportOrder, delOrder, dispatchOrder, getLinkCarModels, getSalesmanList, updateOrder } from '../utils/order'
+// ... 保持其他 import 不变
+// ...
+
+// 新增：导出相关的状态
+const exportVisible = ref(false)
+const exportType = ref('all') // 默认导出全部
+
+// ... 
+
+// 1. 点击“导出数据”按钮：只负责打开弹窗
+const handleExport = () => {
+  exportVisible.value = true
+}
+
+// 2. 弹窗中点击“确认导出”：执行真正的请求
+const confirmExport = () => {
+  exportLoading.value = true
+  
+  // 基础搜索参数 (搜索框里的内容)
+  const params = {
+    orderNo: searchForm.orderNo || undefined,
+    customerName: searchForm.customer || undefined, // 注意后端接收的字段名是 customerName
+    status: searchForm.status || undefined
+  }
+  
+  // 核心逻辑：根据用户选择，决定是否传分页参数
+  if (exportType.value === 'current') {
+    // 【当前页导出】：带上分页参数
+    params.pageNum = queryParams.pageNum
+    params.pageSize = queryParams.pageSize
+  } else {
+    // 【全部导出】：不传分页，或传特殊标记告诉后端不要分页
+    // 根据您的后端逻辑：如果 param 为空，就进 else 分支查全部
+    // 这里我们可以显式不传 pageNum/pageSize
+  }
+  
+  // 发送请求 (响应类型在 order.js 中已设置为 blob)
+  exportOrder(params).then(res => {
+    // 兼容处理：有时候后端抛异常会返回 JSON 而不是 Blob
+    if (res.type === 'application/json') {
+        const reader = new FileReader()
+        reader.onload = () => {
+            const error = JSON.parse(reader.result)
+            ElMessage.error(error.message || '导出无数据或失败')
+        }
+        reader.readAsText(res)
+        return
+    }
+
+    // 正常的 Blob 文件流处理
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    
+    // 生成文件名
+    const typeStr = exportType.value === 'all' ? '全部数据' : `第${queryParams.pageNum}页`
+    const fileName = `订单报表_${typeStr}_${new Date().getTime()}.xlsx`
+    
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = fileName
+    link.click()
+    
+    // 释放资源
+    window.URL.revokeObjectURL(link.href)
+    
+    ElMessage.success('导出成功')
+    exportVisible.value = false // 关闭弹窗
+    
+  }).catch(err => {
+    console.error("导出错误", err)
+    ElMessage.error('导出请求失败')
+  }).finally(() => {
+    exportLoading.value = false
+  })
+}
 
 // --- 状态定义 ---
 const loading = ref(false)
@@ -413,18 +521,6 @@ const submitForm = () => {
   })
 }
 
-const handleExport = () => {
-  exportLoading.value = true
-  exportOrder(searchForm).then(response => {
-    const blob = new Blob([response])
-    const fileName = `订单数据_${new Date().getTime()}.xlsx`
-    const link = document.createElement('a')
-    link.href = window.URL.createObjectURL(blob)
-    link.download = fileName
-    link.click()
-  }).finally(() => exportLoading.value = false)
-}
-
 const handleDelete = (row) => {
   ElMessageBox.confirm(`确认删除订单 "${row.orderNo}" 吗？`, '警告', { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }).then(() => {
     delOrder(row.id).then(() => { ElMessage.success('删除成功'); getList() })
@@ -553,20 +649,56 @@ $border-color: #E5E0D5;
     }
   }
 
+ /* 
+   * 表格区域样式 + 鼠标悬停动态交互效果
+   */
   :deep(.chinese-table) {
     --el-table-header-bg-color: #F9F7F0;
     --el-table-border-color: #EAECEE;
     z-index: 1;
+    
+    /* 默认单元格内容添加过渡动画，防止悬停时跳变 */
+    .cell {
+        transition: all 0.3s ease-out;
+        /* 防止字体加粗时导致列宽抖动，设置固定行高和间距 */
+        display: inline-block;
+    }
 
     .chinese-th {
       color: $ink-black;
       font-weight: bold;
       font-family: 'Noto Serif SC', serif;
-      border-bottom: 2px solid #D4AC0D !important;
+      border-bottom: 2px solid $imperial-gold !important;
+      font-size: 15px;
+    }
+    
+    /* 普通行背景透明 (与条纹 stripe 配合) */
+    .el-table__body tr {
+        background-color: transparent;
+        transition: transform 0.3s ease, background-color 0.3s; /* 给整行加个轻微过渡 */
     }
 
-    .el-table__body tr:hover>td {
-      background-color: #FDF2E9 !important;
+    /* --------------------------------- */
+    /* === 重点修改：鼠标悬停交互效果 === */
+    /* --------------------------------- */
+    .el-table__body tr:hover > td {
+      /* 背景色变成极淡的米黄色 (接近宣纸)，不刺眼 */
+      background-color: rgba(254, 249, 231, 0.8) !important;
+      cursor: pointer;
+    }
+
+    /* 文字动态效果：加粗并稍微变色 */
+    .el-table__body tr:hover .cell {
+        color: $ink-black;
+        font-weight: 600;      /* 字体微微加粗 */
+        transform: scale(1.02); /* 文字本身轻微放大，产生“浮起”感 */
+        text-shadow: 0 0 1px rgba(0,0,0,0.1); /* 加一点点文字阴影，增强质感 */
+    }
+
+    /* 单独给第一列（订单编号）加更强的提示色 */
+    .el-table__body tr:hover > td:first-child .cell {
+        color: $vermilion;     /* 鼠标移上去，订单号变朱砂红 */
+        font-weight: bold;
     }
   }
 
