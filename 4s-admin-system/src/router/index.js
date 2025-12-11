@@ -31,8 +31,8 @@ const routes = [
       },
       {
         path: '/cars',
-        name: 'CarSales',
-        component: () => import('../views/CarSales.vue'),
+        name: 'Car',
+        component: () => import('../views/Car.vue'),
         meta: { title: '车库管理' }
       },
       {
