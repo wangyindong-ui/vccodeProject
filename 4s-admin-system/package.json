@@ -3,16 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-"scripts": {
-  "dev": "vite --host",
-  "build": "vite build",
-  "preview": "vite preview"
-},
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
     "element-plus": "^2.12.0",
+    "flv.js": "^1.6.2",
     "json-bigint": "^1.0.0",
     "pinia": "^3.0.4",
     "sass": "^1.94.2",

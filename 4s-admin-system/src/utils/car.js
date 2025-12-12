@@ -34,3 +34,13 @@ export function delCar(id) {
     params: { id }
   })
 }
+
+
+// 5. 更新车辆信息 (新增)
+export function updateCar(data) {
+  return request({
+    url: '/carKindUpdate', // 假设后端接口名为 /carKindUpdate
+    method: 'post',        // 通常编辑用 PUT 或 POST
+    data
+  })
+}

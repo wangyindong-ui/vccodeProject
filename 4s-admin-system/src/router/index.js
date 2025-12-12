@@ -72,6 +72,14 @@ const routes = [
         name: 'TestDrive',
         component: () => import('../views/TestDrive.vue'),
         meta: { title: '试驾预约管理' }
+      },
+
+          // --- 新增监控路由 ---
+      {
+        path: '/monitor',
+        name: 'CameraPlayer',
+        component: () => import('../views/CameraPlayer.vue'),
+        meta: { title: '实时监控' }
       }
     ]
   }

@@ -56,6 +56,13 @@
           </el-icon>
           <span>字典管理</span>
         </el-menu-item>
+
+        <el-menu-item index="/monitor">
+          <el-icon>
+            <VideoCamera />
+          </el-icon>
+          <span>实时监控</span>
+        </el-menu-item>
       </el-menu>
 
       <!-- 侧边栏底部云纹装饰 -->
@@ -104,7 +111,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown, Tickets } from '@element-plus/icons-vue'
+import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown, Tickets,VideoCamera  } from '@element-plus/icons-vue'
 
 // 初始化路由和状态仓库
 const router = useRouter()

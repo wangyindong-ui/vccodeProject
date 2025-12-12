@@ -210,84 +210,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router' // 1. 引入 useRoute
 import { Search, Refresh, Plus, Download, Select } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderList, addOrder, exportOrder, delOrder, dispatchOrder, getLinkCarModels, getSalesmanList, updateOrder } from '../utils/order'
-// ... 保持其他 import 不变
-// ...
 
-// 新增：导出相关的状态
-const exportVisible = ref(false)
-const exportType = ref('all') // 默认导出全部
-
-// ... 
-
-// 1. 点击“导出数据”按钮：只负责打开弹窗
-const handleExport = () => {
-  exportVisible.value = true
-}
-
-// 2. 弹窗中点击“确认导出”：执行真正的请求
-const confirmExport = () => {
-  exportLoading.value = true
-
-  // 基础搜索参数 (搜索框里的内容)
-  const params = {
-    orderNo: searchForm.orderNo || undefined,
-    customerName: searchForm.customer || undefined, // 注意后端接收的字段名是 customerName
-    status: searchForm.status || undefined
-  }
-
-  // 核心逻辑：根据用户选择，决定是否传分页参数
-  if (exportType.value === 'current') {
-    // 【当前页导出】：带上分页参数
-    params.pageNum = queryParams.pageNum
-    params.pageSize = queryParams.pageSize
-  } else {
-    // 【全部导出】：不传分页，或传特殊标记告诉后端不要分页
-    // 根据您的后端逻辑：如果 param 为空，就进 else 分支查全部
-    // 这里我们可以显式不传 pageNum/pageSize
-  }
-
-  // 发送请求 (响应类型在 order.js 中已设置为 blob)
-  exportOrder(params).then(res => {
-    // 兼容处理：有时候后端抛异常会返回 JSON 而不是 Blob
-    if (res.type === 'application/json') {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const error = JSON.parse(reader.result)
-        ElMessage.error(error.message || '导出无数据或失败')
-      }
-      reader.readAsText(res)
-      return
-    }
-
-    // 正常的 Blob 文件流处理
-    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-
-    // 生成文件名
-    const typeStr = exportType.value === 'all' ? '全部数据' : `第${queryParams.pageNum}页`
-    const fileName = `订单报表_${typeStr}_${new Date().getTime()}.xlsx`
-
-    const link = document.createElement('a')
-    link.href = window.URL.createObjectURL(blob)
-    link.download = fileName
-    link.click()
-
-    // 释放资源
-    window.URL.revokeObjectURL(link.href)
-
-    ElMessage.success('导出成功')
-    exportVisible.value = false // 关闭弹窗
-
-  }).catch(err => {
-    console.error("导出错误", err)
-    ElMessage.error('导出请求失败')
-  }).finally(() => {
-    exportLoading.value = false
-  })
-}
+const route = useRoute() // 2. 获取当前路由信息
 
 // --- 状态定义 ---
 const loading = ref(false)
@@ -301,6 +230,10 @@ const formRef = ref(null)
 
 const isEdit = ref(false)
 const dialogTitle = ref('新增订单登记')
+
+// 导出相关
+const exportVisible = ref(false)
+const exportType = ref('all')
 
 const tableData = ref([])
 const carOptions = ref([])
@@ -345,10 +278,37 @@ const statusMap = {
   refunded: '已退单'
 }
 
-onMounted(() => {
-  getList()
-  fetchCarModels()
-  fetchSalesmanList()
+// --- 3. 核心修改：onMounted 逻辑 ---
+onMounted(async () => {
+  // 先并行加载基础数据
+  const initPromises = [
+    getList(),
+    fetchSalesmanList(),
+    fetchCarModels() // 必须等待车型数据加载完，才能进行匹配回显
+  ]
+  
+  await Promise.all(initPromises)
+
+  // 检查 URL 是否有 autoModel 参数
+  if (route.query.autoModel) {
+    const targetModelName = route.query.autoModel
+    console.log("检测到自动生成订单请求，车型：", targetModelName)
+    
+    // 1. 打开新增弹窗
+    openCreateDialog()
+    
+    // 2. 利用你现有的 findCarIdByName 方法查找对应的 ID
+    // 注意：因为 fetchCarModels 已经 await 过了，所以 carOptions 此时是有数据的
+    const matchedId = findCarIdByName(targetModelName)
+    
+    if (matchedId) {
+      form.carModel = matchedId
+      // 可以在备注里自动填一下，提升体验
+      form.remark = `[系统] 由库存车辆 ${targetModelName} 自动生成`
+    } else {
+      ElMessage.warning(`未在关联车型库中找到: ${targetModelName}`)
+    }
+  }
 })
 
 const formatTimeArray = (timeArr) => {
@@ -368,7 +328,7 @@ const getList = () => {
     status: searchForm.status || undefined
   }
 
-  getOrderList(params).then(res => {
+  return getOrderList(params).then(res => { // 加了 return 以便 await
     if (res.code === 200) {
       const pageData = res.data || {}
       tableData.value = pageData.records || []
@@ -400,7 +360,6 @@ const fetchCarModels = async () => {
           value: String(car.id)
         }))
       }))
-      // console.log("车型数据加载完成:", carOptions.value)
     }
   } catch (err) {
     console.error("获取车型失败", err)
@@ -432,32 +391,24 @@ const resetSearch = () => {
   handleSearch()
 }
 
-// --- 查找 ID 逻辑 (带调试日志) ---
+// --- 查找 ID 逻辑 ---
 const findCarIdByName = (name) => {
-  if (!name) {
-    console.log("❌ 传入的车型名称为空")
-    return ''
-  }
-
+  if (!name) return ''
   const cleanName = String(name).trim().replace(/\s+/g, '')
 
   for (const brand of carOptions.value) {
     if (brand.children) {
       for (const car of brand.children) {
-        // 尝试匹配所有可能的名称字段
         const carLabel = String(car.label || '').trim().replace(/\s+/g, '')
         const carModel = String(car.model || '').trim().replace(/\s+/g, '')
         const carCarModel = String(car.carModel || '').trim().replace(/\s+/g, '')
 
         if (cleanName === carLabel || cleanName === carModel || cleanName === carCarModel) {
-          console.log(`✅ 匹配成功! 找到 ID: ${car.value}`)
           return String(car.value)
         }
       }
     }
   }
-
-  console.warn(`⚠️ 未找到匹配项。当前下拉数据总品牌数: ${carOptions.value.length}`)
   return ''
 }
 
@@ -466,7 +417,7 @@ const openCreateDialog = () => {
   dialogTitle.value = '新增订单登记'
   form.id = null
   form.customerName = ''
-  form.orderType = ''
+  form.orderType = 'vehicle_sales' // 既然是生成订单，默认为整车销售体验更好
   form.salesman = ''
   form.carModel = ''
   form.totalAmount = 0
@@ -478,8 +429,6 @@ const viewDetail = async (row) => {
   isEdit.value = true
   dialogTitle.value = '订单详情'
 
-  console.log("👉 点击详情，当前行数据:", row)
-
   if (carOptions.value.length === 0) await fetchCarModels()
   if (salesmanOptions.value.length === 0) await fetchSalesmanList()
 
@@ -489,12 +438,7 @@ const viewDetail = async (row) => {
   form.salesman = row.salesman
   form.totalAmount = row.totalAmount
   form.remark = row.remark
-
-  // 尝试查找 ID
-  const foundId = findCarIdByName(row.carModel)
-
-  // 无论是否找到，都赋值。如果没有找到，赋值为空，级联框将显示“请选择”
-  form.carModel = foundId
+  form.carModel = findCarIdByName(row.carModel)
 
   dialogVisible.value = true
 }
@@ -510,6 +454,8 @@ const submitForm = () => {
         ElMessage.success(successMsg)
         dialogVisible.value = false
         getList()
+        // 提交成功后，如果 URL 还有参数，建议去掉，以免刷新页面又弹出来
+        // (可选优化，根据需求决定)
       }).finally(() => {
         submitLoading.value = false
       })
@@ -517,8 +463,38 @@ const submitForm = () => {
   })
 }
 
+// ... 导出、删除、派工等函数保持不变 ...
+const handleExport = () => { exportVisible.value = true }
+const confirmExport = () => {
+  exportLoading.value = true
+  const params = {
+    orderNo: searchForm.orderNo || undefined,
+    customerName: searchForm.customer || undefined,
+    status: searchForm.status || undefined
+  }
+  if (exportType.value === 'current') {
+    params.pageNum = queryParams.pageNum
+    params.pageSize = queryParams.pageSize
+  }
+  exportOrder(params).then(res => {
+    if (res.type === 'application/json') {
+        const reader = new FileReader()
+        reader.onload = () => { const error = JSON.parse(reader.result); ElMessage.error(error.message || '导出失败') }
+        reader.readAsText(res)
+        return
+    }
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = `订单报表_${new Date().getTime()}.xlsx`
+    link.click()
+    ElMessage.success('导出成功')
+    exportVisible.value = false
+  }).finally(() => { exportLoading.value = false })
+}
+
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确认删除订单 "${row.orderNo}" 吗？`, '警告', { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }).then(() => {
+  ElMessageBox.confirm(`确认删除订单 "${row.orderNo}" 吗？`, '警告', { confirmButtonText: '确定删除', type: 'warning' }).then(() => {
     delOrder(row.id).then(() => { ElMessage.success('删除成功'); getList() })
   })
 }
@@ -527,10 +503,6 @@ const handleDispatch = (row) => {
   ElMessageBox.confirm('确认对此订单进行派工服务吗？', '提示', { confirmButtonText: '确认派工', type: 'info' }).then(() => {
     dispatchOrder({ id: row.id, status: 'servicing' }).then(() => { ElMessage.success('派工成功'); getList() })
   })
-}
-
-const viewDetailLog = (row) => {
-  // 调试用
 }
 
 const formatMoney = (val) => {

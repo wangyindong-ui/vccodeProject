@@ -6,8 +6,8 @@ import JSONbig from 'json-bigint'
 const JSONbigString = JSONbig({ storeAsString: true })
 
 const service = axios.create({
-  baseURL: 'http://192.168.3.23:8091/api', // 指向 Spring Boot 地址
-  timeout: 5000,
+  baseURL: 'http://localhost:8091/api', // 指向 Spring Boot 地址
+  timeout: 50000000,
   
   // 处理后端返回的大数字 ID
   transformResponse: [function (data) {
