@@ -351,6 +351,8 @@ $border-color: #E5E0D5;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     position: relative;
     background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
+    animation: cardEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.3s ease;
 
     &::before {
       content: '';
@@ -362,6 +364,21 @@ $border-color: #E5E0D5;
       border: 1px solid rgba($imperial-gold, 0.2);
       pointer-events: none;
       z-index: 0;
+    }
+  }
+
+  @keyframes cardEnter {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.02) translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
     }
   }
 
@@ -445,6 +462,18 @@ $border-color: #E5E0D5;
     --el-table-header-bg-color: #F9F7F0;
     --el-table-border-color: #EAECEE;
     z-index: 1;
+    animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    @keyframes tableEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.98) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
 
     .chinese-th {
       color: $ink-black;
@@ -457,6 +486,23 @@ $border-color: #E5E0D5;
     .el-table__body tr {
       background-color: transparent;
       transition: all 0.3s;
+      animation: rowEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .el-table__body tr:nth-child(1) { animation-delay: 0.1s; }
+    .el-table__body tr:nth-child(2) { animation-delay: 0.2s; }
+    .el-table__body tr:nth-child(3) { animation-delay: 0.3s; }
+    .el-table__body tr:nth-child(n+4) { animation-delay: 0.4s; }
+
+    @keyframes rowEnter {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     .el-table__body tr:hover>td {
@@ -516,6 +562,11 @@ $border-color: #E5E0D5;
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .color-tag:hover {
+    transform: rotate(180deg) scale(1.05);
   }
 
   .dot {
@@ -534,6 +585,7 @@ $border-color: #E5E0D5;
     font-size: 14px;
     transform: rotate(-5deg);
     font-weight: bold;
+    animation: sealAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), sealPulse 0.4s ease-in-out 0.5s infinite;
 
     &.seal-blue {
       color: #2980B9;
@@ -544,12 +596,33 @@ $border-color: #E5E0D5;
       color: $vermilion;
       border-color: $vermilion;
       border-style: dashed;
+      animation: sealAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     &.seal-gray {
       color: #7F8C8D;
       border-color: #7F8C8D;
       border-style: dashed;
+    }
+  }
+
+  @keyframes sealAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotate(-15deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0);
+    }
+  }
+
+  @keyframes sealPulse {
+    0%, 100% {
+      transform: scale(1) rotate(-5deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(-5deg);
     }
   }
 
@@ -573,9 +646,21 @@ $border-color: #E5E0D5;
     justify-content: center;
     position: relative;
     z-index: 1;
+    animation: paginationFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 
     :deep(.el-pagination.is-background .el-pager li.is-active) {
       background-color: $vermilion !important;
+    }
+  }
+
+  @keyframes paginationFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
@@ -612,6 +697,7 @@ $border-color: #E5E0D5;
   .cloud-pattern {
     height: 20px;
     background: url('data:image/svg+xml;utf8,<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20 20c-5 0-8-5-10-10S5 0 0 0h40c-5 0-8 5-10 10s-5 10-10 10z" fill="%23D4AC0D" fill-opacity="0.2"/></svg>') repeat-x;
+    animation: cloudFloat 2s ease-in-out infinite;
 
     &.top {
       margin-bottom: 20px;
@@ -620,6 +706,17 @@ $border-color: #E5E0D5;
 
     &.bottom {
       margin-top: 20px;
+    }
+  }
+
+  @keyframes cloudFloat {
+    0%, 100% {
+      transform: translateY(0px);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translateY(-8px);
+      opacity: 0.8;
     }
   }
 

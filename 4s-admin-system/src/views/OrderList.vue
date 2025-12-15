@@ -98,102 +98,82 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button link class="btn-link-primary" @click="viewDetail(scope.row)">详情</el-button>
-            <el-button link class="btn-link-gold" v-if="scope.row.status === 'paid'"
-              @click="handleDispatch(scope.row)">派工</el-button>
             <el-button link class="btn-link-danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button link class="btn-link-gold" @click="handleDispatch(scope.row)">派工</el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrapper">
+      <!-- 分页 -->
+      <div class="pagination-wrapper" v-if="total > 0">
         <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize"
-          :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next, jumper" :total="total" background
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+          :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" background />
       </div>
     </div>
 
-    <!-- 3. 弹窗 (复用：新增/详情) -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px" class="chinese-dialog"
-      :close-on-click-modal="false">
-      <div class="cloud-pattern top"></div>
+    <!-- 弹窗 -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="chinese-dialog"
+      @close="dialogVisible = false">
+      <div class="chinese-form-layout">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+          <el-form-item label="客户名称" prop="customerName">
+            <el-input v-model="form.customerName" placeholder="输入客户姓名" />
+          </el-form-item>
 
-      <el-form :model="form" ref="formRef" :rules="rules" label-width="100px" class="chinese-form-layout">
-        <el-form-item label="客户姓名" prop="customerName">
-          <el-input v-model="form.customerName" placeholder="请输入客户姓名" />
-        </el-form-item>
+          <el-form-item label="业务类型" prop="orderType">
+            <el-select v-model="form.orderType" placeholder="请选择业务类型">
+              <el-option label="整车销售" value="vehicle_sales" />
+              <el-option label="配件销售" value="parts_sales" />
+              <el-option label="维修服务" value="repair_service" />
+              <el-option label="保养服务" value="maintenance_service" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="业务类型" prop="orderType">
-          <el-select v-model="form.orderType" placeholder="请选择" style="width: 100%" popper-class="chinese-popper">
-            <el-option label="整车销售" value="vehicle_sales" />
-            <el-option label="维修保养" value="maintenance" />
-            <el-option label="配件购买" value="accessories" />
-          </el-select>
-        </el-form-item>
+          <el-form-item label="销售顾问" prop="salesman">
+            <el-select v-model="form.salesman" placeholder="请选择销售顾问" :loading="salesmanLoading">
+              <el-option v-for="person in salesmanOptions" :key="person.id" :label="person.name"
+                :value="person.id" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="接待人员" prop="salesman">
-          <el-select v-model="form.salesman" placeholder="请选择接待顾问" style="width: 100%" popper-class="chinese-popper"
-            :loading="salesmanLoading">
-            <el-option v-for="item in salesmanOptions" :key="item.id" :label="item.salesman" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关联车型" prop="carModel">
-          <el-cascader v-model="form.carModel" :options="carOptions" :props="{
-            value: 'value',       /* 👈 修改点：必须对应 JS 中处理后的 key */
-            label: 'label',       /* 👈 修改点：必须对应 JS 中处理后的 key */
-            children: 'children',
-            emitPath: false
-          }" placeholder="请选择品牌 / 车型" style="width: 100%" filterable clearable :show-all-levels="false"
-            :loading="carLoading" popper-class="chinese-cascader-popper">
-            <template #default="{ node, data }">
-              <!-- 这里也要改用 data.label -->
-              <span style="font-family: 'Noto Serif SC', serif">{{ data.label }}</span>
-              <span v-if="node.isLeaf && data.price"
-                style="color: #999; float: right; margin-left: 10px; font-size: 12px; font-family: Arial">
-                ¥{{ data.price }}万
-              </span>
-            </template>
-          </el-cascader>
-        </el-form-item>
+          <el-form-item label="关联车型">
+            <el-cascader v-model="form.carModel" :options="carOptions" :props="{ checkStrictly: true }"
+              placeholder="请选择车型" clearable style="width: 100%" />
+          </el-form-item>
 
-        <el-form-item label="订单金额" prop="totalAmount">
-          <el-input-number v-model="form.totalAmount" :min="0" :precision="2" style="width: 100%" />
-        </el-form-item>
+          <el-form-item label="订单金额" prop="totalAmount">
+            <el-input-number v-model="form.totalAmount" :min="0" :max="999999999" placeholder="输入金额" />
+          </el-form-item>
 
-        <el-form-item label="备注信息">
-          <el-input v-model="form.remark" type="textarea" placeholder="填写备注..." />
-        </el-form-item>
-      </el-form>
-
-      <div class="cloud-pattern bottom"></div>
+          <el-form-item label="备注">
+            <el-input v-model="form.remark" type="textarea" rows="3" placeholder="输入备注" />
+          </el-form-item>
+        </el-form>
+      </div>
 
       <template #footer>
         <div class="dialog-footer">
           <el-button class="chinese-btn-default-plain" @click="dialogVisible = false">取消</el-button>
           <el-button class="chinese-btn-vermilion-solid" :loading="submitLoading" @click="submitForm">
-            <el-icon style="margin-right: 4px"><Select /></el-icon>
-            {{ isEdit ? '确认' : '确认登记' }}
+            <el-icon style="margin-right: 4px">
+              <Upload />
+            </el-icon> 提交
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <!-- 4. 导出选项弹窗 (新增) -->
-    <el-dialog v-model="exportVisible" title="导出数据选项" width="400px" class="chinese-dialog" append-to-body
-      :close-on-click-modal="false">
-      <div style="padding: 20px 10px;">
-        <el-form label-width="80px">
-          <el-form-item label="导出范围">
-            <el-radio-group v-model="exportType" class="chinese-radio-group">
-              <el-radio label="all">导出全部数据</el-radio>
-              <el-radio label="current">仅导出当前页</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <div class="tip-text" style="margin-left: 80px; color: #999; font-size: 12px;">
-            <span v-if="exportType === 'all'">将导出符合搜索条件的所有数据</span>
-            <span v-else>仅导出当前表格显示的 {{ queryParams.pageSize }} 条数据</span>
-          </div>
-        </el-form>
-      </div>
+    <!-- 导出对话框 -->
+    <el-dialog v-model="exportVisible" title="导出选项" width="400px" class="chinese-dialog">
+      <el-form :model="{ exportType }" label-width="80px">
+        <el-form-item label="导出范围">
+          <el-radio-group v-model="exportType">
+            <el-radio label="all">全部订单</el-radio>
+            <el-radio label="current">当前页</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
 
       <template #footer>
         <div class="dialog-footer">
@@ -211,14 +191,13 @@
 
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router' // 1. 引入 useRoute
-import { Search, Refresh, Plus, Download, Select } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
+import { Search, Refresh, Plus, Download, Upload, Select } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderList, addOrder, exportOrder, delOrder, dispatchOrder, getLinkCarModels, getSalesmanList, updateOrder } from '../utils/order'
 
-const route = useRoute() // 2. 获取当前路由信息
+const route = useRoute()
 
-// --- 状态定义 ---
 const loading = ref(false)
 const exportLoading = ref(false)
 const submitLoading = ref(false)
@@ -231,7 +210,6 @@ const formRef = ref(null)
 const isEdit = ref(false)
 const dialogTitle = ref('新增订单登记')
 
-// 导出相关
 const exportVisible = ref(false)
 const exportType = ref('all')
 
@@ -278,32 +256,25 @@ const statusMap = {
   refunded: '已退单'
 }
 
-// --- 3. 核心修改：onMounted 逻辑 ---
 onMounted(async () => {
-  // 先并行加载基础数据
   const initPromises = [
     getList(),
     fetchSalesmanList(),
-    fetchCarModels() // 必须等待车型数据加载完，才能进行匹配回显
+    fetchCarModels()
   ]
   
   await Promise.all(initPromises)
 
-  // 检查 URL 是否有 autoModel 参数
   if (route.query.autoModel) {
     const targetModelName = route.query.autoModel
     console.log("检测到自动生成订单请求，车型：", targetModelName)
     
-    // 1. 打开新增弹窗
     openCreateDialog()
     
-    // 2. 利用你现有的 findCarIdByName 方法查找对应的 ID
-    // 注意：因为 fetchCarModels 已经 await 过了，所以 carOptions 此时是有数据的
     const matchedId = findCarIdByName(targetModelName)
     
     if (matchedId) {
       form.carModel = matchedId
-      // 可以在备注里自动填一下，提升体验
       form.remark = `[系统] 由库存车辆 ${targetModelName} 自动生成`
     } else {
       ElMessage.warning(`未在关联车型库中找到: ${targetModelName}`)
@@ -328,7 +299,7 @@ const getList = () => {
     status: searchForm.status || undefined
   }
 
-  return getOrderList(params).then(res => { // 加了 return 以便 await
+  return getOrderList(params).then(res => {
     if (res.code === 200) {
       const pageData = res.data || {}
       tableData.value = pageData.records || []
@@ -342,7 +313,6 @@ const getList = () => {
   })
 }
 
-// 获取车型
 const fetchCarModels = async () => {
   carLoading.value = true
   try {
@@ -368,7 +338,6 @@ const fetchCarModels = async () => {
   }
 }
 
-// 获取人员
 const fetchSalesmanList = async () => {
   salesmanLoading.value = true
   try {
@@ -391,7 +360,6 @@ const resetSearch = () => {
   handleSearch()
 }
 
-// --- 查找 ID 逻辑 ---
 const findCarIdByName = (name) => {
   if (!name) return ''
   const cleanName = String(name).trim().replace(/\s+/g, '')
@@ -417,7 +385,7 @@ const openCreateDialog = () => {
   dialogTitle.value = '新增订单登记'
   form.id = null
   form.customerName = ''
-  form.orderType = 'vehicle_sales' // 既然是生成订单，默认为整车销售体验更好
+  form.orderType = 'vehicle_sales'
   form.salesman = ''
   form.carModel = ''
   form.totalAmount = 0
@@ -454,8 +422,6 @@ const submitForm = () => {
         ElMessage.success(successMsg)
         dialogVisible.value = false
         getList()
-        // 提交成功后，如果 URL 还有参数，建议去掉，以免刷新页面又弹出来
-        // (可选优化，根据需求决定)
       }).finally(() => {
         submitLoading.value = false
       })
@@ -463,7 +429,6 @@ const submitForm = () => {
   })
 }
 
-// ... 导出、删除、派工等函数保持不变 ...
 const handleExport = () => { exportVisible.value = true }
 const confirmExport = () => {
   exportLoading.value = true
@@ -512,7 +477,8 @@ const formatMoney = (val) => {
 </script>
 
 <style lang="scss" scoped>
-/* 样式保持不变 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+
 $vermilion: #C0392B;
 $imperial-gold: #D4AC0D;
 $ink-black: #2C3E50;
@@ -527,6 +493,8 @@ $border-color: #E5E0D5;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     position: relative;
     background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
+    animation: cardEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.3s ease;
 
     &::before {
       content: '';
@@ -538,6 +506,21 @@ $border-color: #E5E0D5;
       border: 1px solid rgba($imperial-gold, 0.2);
       pointer-events: none;
       z-index: 0;
+    }
+  }
+
+  @keyframes cardEnter {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.02) translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
     }
   }
 
@@ -579,6 +562,16 @@ $border-color: #E5E0D5;
     }
   }
 
+  .chinese-btn-default {
+    border-radius: 2px;
+
+    &:hover {
+      color: $imperial-gold;
+      border-color: $imperial-gold;
+      background-color: #FEF9E7;
+    }
+  }
+
   .chinese-btn-gold {
     background-color: $imperial-gold;
     border-color: $imperial-gold;
@@ -587,16 +580,6 @@ $border-color: #E5E0D5;
 
     &:hover {
       background-color: darken($imperial-gold, 8%);
-    }
-  }
-
-  .chinese-btn-default {
-    border-radius: 2px;
-
-    &:hover {
-      color: $imperial-gold;
-      border-color: $imperial-gold;
-      background-color: #FEF9E7;
     }
   }
 
@@ -617,19 +600,21 @@ $border-color: #E5E0D5;
     }
   }
 
-  /* 
-   * 表格区域样式 + 鼠标悬停动态交互效果
-   */
   :deep(.chinese-table) {
     --el-table-header-bg-color: #F9F7F0;
     --el-table-border-color: #EAECEE;
     z-index: 1;
+    animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    /* 默认单元格内容添加过渡动画，防止悬停时跳变 */
-    .cell {
-      transition: all 0.3s ease-out;
-      /* 防止字体加粗时导致列宽抖动，设置固定行高和间距 */
-      display: inline-block;
+    @keyframes tableEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.98) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     .chinese-th {
@@ -640,72 +625,57 @@ $border-color: #E5E0D5;
       font-size: 15px;
     }
 
-    /* 普通行背景透明 (与条纹 stripe 配合) */
     .el-table__body tr {
       background-color: transparent;
-      transition: transform 0.3s ease, background-color 0.3s;
-      /* 给整行加个轻微过渡 */
+      transition: all 0.3s;
+      animation: rowEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
-    /* --------------------------------- */
-    /* === 重点修改：鼠标悬停交互效果 === */
-    /* --------------------------------- */
+    .el-table__body tr:nth-child(1) { animation-delay: 0.1s; }
+    .el-table__body tr:nth-child(2) { animation-delay: 0.2s; }
+    .el-table__body tr:nth-child(3) { animation-delay: 0.3s; }
+    .el-table__body tr:nth-child(n+4) { animation-delay: 0.4s; }
+
+    @keyframes rowEnter {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
     .el-table__body tr:hover>td {
-      /* 背景色变成极淡的米黄色 (接近宣纸)，不刺眼 */
       background-color: rgba(254, 249, 231, 0.8) !important;
       cursor: pointer;
     }
 
-    /* 文字动态效果：加粗并稍微变色 */
     .el-table__body tr:hover .cell {
       color: $ink-black;
       font-weight: 600;
-      /* 字体微微加粗 */
       transform: scale(1.02);
-      /* 文字本身轻微放大，产生“浮起”感 */
       text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
-      /* 加一点点文字阴影，增强质感 */
     }
 
-    /* 单独给第一列（订单编号）加更强的提示色 */
-    .el-table__body tr:hover>td:first-child .cell {
-      color: $vermilion;
-      /* 鼠标移上去，订单号变朱砂红 */
-      font-weight: bold;
-    }
-
-    /* 1. 默认状态 & 表头：固定列给纯白背景 */
     .el-table__body tr td.el-table-fixed-column--left,
     .el-table__body tr td.el-table-fixed-column--right,
     .el-table__header th.el-table-fixed-column--left,
     .el-table__header th.el-table-fixed-column--right {
       background-color: #fff;
       z-index: 10;
-      /* 确保在普通列上面 */
     }
 
-    /* 2. 斑马纹修正：偶数行的固定列背景要变成浅灰 (#fafafa 是 Element 默认条纹色) */
     &.el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--left,
     &.el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--right {
       background-color: #fafafa;
     }
 
-    /* 3. Hover 状态修正：鼠标悬停时，固定列背景变成米黄色（必须不透明） */
     .el-table__body tr:hover>td.el-table-fixed-column--left,
     .el-table__body tr:hover>td.el-table-fixed-column--right {
       background-color: #FEF9E7 !important;
-      /* 不透明的米黄色 */
     }
-
-    /* === ⬆️ 修复代码结束 ⬆️ === */
-
-
-    /* 原有的行样式（保持不变） */
-    .el-table__body tr {
-      background-color: transparent;
-      transition: transform 0.3s ease, background-color 0.3s;
-    }
-
   }
 
   .price-text {
@@ -774,30 +744,35 @@ $border-color: #E5E0D5;
     justify-content: center;
     position: relative;
     z-index: 1;
+    animation: paginationFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 
     :deep(.el-pagination.is-background .el-pager li.is-active) {
       background-color: $vermilion !important;
     }
   }
 
-  /* 
-   * =========================================
-   *  新增：弹窗内部的“新中式”表单样式覆盖 
-   * =========================================
-   */
+  @keyframes paginationFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .chinese-form-layout {
     padding: 0 20px;
 
-    /* 输入框去边框，留底线 */
     :deep(.el-input__wrapper),
     :deep(.el-select__wrapper),
-    :deep(.el-textarea__inner) {
+    :deep(.el-input-number__wrapper) {
       box-shadow: none !important;
       border-bottom: 1px solid $ink-black !important;
       border-radius: 0;
       background-color: transparent;
       padding-left: 0;
-      transition: border-color 0.3s;
 
       &:hover,
       &.is-focus {
@@ -817,10 +792,10 @@ $border-color: #E5E0D5;
     }
   }
 
-  /* 祥云纹饰 */
   .cloud-pattern {
     height: 20px;
     background: url('data:image/svg+xml;utf8,<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20 20c-5 0-8-5-10-10S5 0 0 0h40c-5 0-8 5-10 10s-5 10-10 10z" fill="%23D4AC0D" fill-opacity="0.2"/></svg>') repeat-x;
+    animation: cloudFloat 2s ease-in-out infinite;
 
     &.top {
       margin-bottom: 20px;
@@ -832,7 +807,17 @@ $border-color: #E5E0D5;
     }
   }
 
-  /* 弹窗底部按钮样式 */
+  @keyframes cloudFloat {
+    0%, 100% {
+      transform: translateY(0px);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translateY(-8px);
+      opacity: 0.8;
+    }
+  }
+
   .dialog-footer {
     text-align: center;
     padding-bottom: 10px;
@@ -866,14 +851,11 @@ $border-color: #E5E0D5;
 }
 </style>
 
-<!-- 全局样式覆盖：弹窗和下拉框 -->
 <style lang="scss">
 $vermilion: #C0392B;
 $imperial-gold: #D4AC0D;
 $ink-black: #2C3E50;
-$rice-paper: #F9F7F0;
 
-/* 1. 弹窗整体风格 */
 .chinese-dialog {
   .el-dialog__header {
     border-bottom: 1px solid rgba($imperial-gold, 0.3);
@@ -893,10 +875,8 @@ $rice-paper: #F9F7F0;
   }
 }
 
-/* 2. 下拉框选中样式 */
 .chinese-popper,
 .chinese-cascader-popper {
-
   .el-select-dropdown__item.selected,
   .el-cascader-node.is-active {
     color: $vermilion !important;

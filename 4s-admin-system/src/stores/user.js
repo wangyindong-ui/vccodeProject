@@ -35,10 +35,13 @@ export const useUserStore = defineStore('user', () => {
   
   // 更新个人信息
   async function updateProfile(data) {
-    await request.post('/user/update', data)
-    // 更新本地状态
-    Object.assign(userInfo.value, data)
-    localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+    const res = await request.post('/personal/edit', data)
+    if (res && res.code === 200) {
+      // 更新本地状态
+      Object.assign(userInfo.value, data)
+      localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+    }
+    return res
   }
 
  // 注册动作

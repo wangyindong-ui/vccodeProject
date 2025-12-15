@@ -56,6 +56,12 @@
           </el-icon>
           <span>字典管理</span>
         </el-menu-item>
+        <el-menu-item index="/role">
+          <el-icon>
+            <Setting />
+          </el-icon>
+          <span>角色管理</span>
+        </el-menu-item>
 
         <el-menu-item index="/monitor">
           <el-icon>
@@ -83,7 +89,7 @@
           <el-dropdown @command="handleCommand">
             <span class="el-dropdown-link user-link">
               <div class="avatar-frame">
-                <el-avatar :size="30" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+                <el-avatar :size="30" :src="userStore.userInfo.avatar" />
               </div>
               <span class="username">{{ userStore.userInfo.name || '掌柜' }}</span>
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
@@ -111,12 +117,48 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown, Tickets,VideoCamera  } from '@element-plus/icons-vue'
+import { onMounted } from 'vue'
+import { API_BASE_URL } from '../utils/request'
+import { Van, Odometer, Tools, Box, Timer, Notebook, ArrowDown, Tickets, VideoCamera, Setting } from '@element-plus/icons-vue'
 
 // 初始化路由和状态仓库
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+
+// 加载用户头像
+const loadUserAvatar = async () => {
+  try {
+    if (!userStore.userInfo.id) {
+      console.warn('用户ID不存在，无法加载头像')
+      return
+    }
+
+    const response = await fetch(`${API_BASE_URL}/personal/getAvatar?id=${userStore.userInfo.id}`, {
+      method: 'GET',
+      headers: {
+        'token': localStorage.getItem('token') || ''
+      }
+    })
+
+    if (response.ok) {
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      userStore.userInfo.avatar = blobUrl
+      // 同时更新 localStorage 保证数据一致
+      localStorage.setItem('userInfo', JSON.stringify(userStore.userInfo))
+    } else {
+      console.warn('获取头像响应异常:', response.status)
+    }
+  } catch (e) {
+    console.error('加载头像失败:', e)
+  }
+}
+
+// 页面加载时初始化
+onMounted(() => {
+  loadUserAvatar()
+})
 
 // 处理下拉菜单点击事件
 const handleCommand = (command) => {

@@ -55,6 +55,12 @@ const routes = [
         meta: { title: '字典表管理' }
       },
       {
+        path: '/role',
+        name: 'Role',
+        component: () => import('../views/Role.vue'),
+        meta: { title: '角色管理' }
+      },
+      {
         path: '/profile',
         name: 'Profile',
         component: () => import('../views/Profile.vue'),

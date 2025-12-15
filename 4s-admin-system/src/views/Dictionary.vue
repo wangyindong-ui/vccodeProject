@@ -152,6 +152,7 @@
             style="width: 100%"
             popper-class="chinese-popper"
             class="chinese-select"
+            @change="handleFatherChange"
           >
             <el-option 
               v-for="item in fatherDictList" 
@@ -166,8 +167,12 @@
           <el-input v-model="form.dictName" placeholder="例如：用户性别" />
         </el-form-item>
 
-        <el-form-item label="字典类型">
+        <el-form-item label="字典类型" v-if="categoryType === 'general'">
           <el-input v-model="form.dictType" placeholder="例如：sys_user_sex" />
+        </el-form-item>
+
+        <el-form-item label="字典编码">
+          <el-input v-model="form.dictCode" placeholder="例如：M、F" />
         </el-form-item>
         
         <el-form-item label="状态">
@@ -318,32 +323,50 @@ const openDialog = async (row = null) => {
 const handleCategoryTypeChange = (val) => {
   if (val === 'general') {
     form.value.fatherId = 0
+    form.value.dictType = ''
   } else {
     form.value.fatherId = null 
+    form.value.dictType = ''
+  }
+}
+
+const handleFatherChange = (fatherId) => {
+  const father = fatherDictList.value.find(item => item.id === fatherId)
+  if (father) {
+    form.value.dictType = father.dictType
   }
 }
 
 const handleSubmit = async () => {
-  if (!form.value.dictName || !form.value.dictType) {
-    ElMessage.warning('名称和类型为必填项')
+  if (!form.value.dictName) {
+    ElMessage.warning('名称为必填项')
     return
   }
   
+  const submitData = { ...form.value }
+  
   if (categoryType.value === 'general') {
-    form.value.fatherId = 0
+    submitData.fatherId = 0
+    submitData.hierarchy = 0  // 总类
   } else {
-    if (!form.value.fatherId) {
+    if (!submitData.fatherId) {
       ElMessage.warning('请选择父类')
       return
+    }
+    submitData.hierarchy = 1  // 分类
+    // 分类模式下，必须传递父类的 dictType
+    const father = fatherDictList.value.find(item => String(item.id) === String(submitData.fatherId))
+    if (father && father.dictType) {
+      submitData.dictType = father.dictType
     }
   }
 
   try {
     if (form.value.id) {
-      await request.post('/dict/update', form.value)
+      await request.post('/dict/update', submitData)
       ElMessage.success('更新成功')
     } else {
-      await request.post('/dict/add', form.value)
+      await request.post('/dict/add', submitData)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
@@ -528,6 +551,39 @@ onMounted(() => {
 .chinese-table {
   border: 1px solid var(--chinese-border);
   background: transparent;
+  animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes tableEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+:deep(.el-table__row) {
+  animation: rowFadeIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: all 0.3s;
+}
+
+:deep(.el-table__row:nth-child(1)) { animation-delay: 0.1s; }
+:deep(.el-table__row:nth-child(2)) { animation-delay: 0.2s; }
+:deep(.el-table__row:nth-child(3)) { animation-delay: 0.3s; }
+:deep(.el-table__row:nth-child(n+4)) { animation-delay: 0.4s; }
+
+@keyframes rowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 :deep(.chinese-header th) {
   background-color: #F9F7F0 !important;
@@ -561,6 +617,18 @@ onMounted(() => {
 .cloud-pattern {
   height: 20px;
   background: url('data:image/svg+xml;utf8,<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20 20c-5 0-8-5-10-10S5 0 0 0h40c-5 0-8 5-10 10s-5 10-10 10z" fill="%23D4AC0D" fill-opacity="0.2"/></svg>') repeat-x;
+  animation: cloudFloat 2s ease-in-out infinite;
+}
+
+@keyframes cloudFloat {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 0.8;
+  }
 }
 .cloud-pattern.top { margin-bottom: 20px; transform: rotate(180deg); }
 .cloud-pattern.bottom { margin-top: 20px; }
@@ -580,43 +648,6 @@ onMounted(() => {
   font-weight: bold;
 }
 
-/* --- 弹窗单选框美化 (红底+红点 = 视觉实心) --- */
-
-/* 1. 未选中状态 */
-:deep(.chinese-radio .el-radio__inner) {
-  border-color: #999; 
-  background-color: transparent;
-}
-:deep(.chinese-radio .el-radio__input:hover .el-radio__inner) {
-  border-color: var(--chinese-red);
-}
-
-/* 2. 选中状态：背景变成朱砂红，边框也是朱砂红 */
-:deep(.chinese-radio .el-radio__input.is-checked .el-radio__inner) {
-  background: var(--chinese-red) !important;
-  border-color: var(--chinese-red) !important;
-}
-
-/* 3. 选中状态：内部小白点也变成红色 (关键!) */
-:deep(.chinese-radio .el-radio__input.is-checked .el-radio__inner::after) {
-  background-color: var(--chinese-red) !important;
-  display: block !important;
-  content: "";
-  transform: translate(-50%, -50%) scale(1) !important;
-}
-
-/* 4. 选中状态：右侧文字 */
-:deep(.chinese-radio .el-radio__input.is-checked + .el-radio__label) {
-  color: var(--chinese-red) !important;
-  font-weight: bold;
-}
-
-/* 5. 未选中状态：文字 */
-:deep(.chinese-radio .el-radio__label) {
-  font-family: 'Noto Serif SC', serif;
-  color: var(--chinese-ink);
-}
-
 /* 分页组件样式定制 */
 .pagination-wrapper {
   margin-top: 25px;
@@ -631,5 +662,56 @@ onMounted(() => {
   background-color: transparent;
   border: 1px solid #D7DBDD;
   font-family: 'Noto Serif SC', serif;
+}
+</style>
+
+<style>
+/* ===== 全局单选框样式 - 必须在scoped外 ===== */
+
+/* 1. 未选中状态：灰色边框 */
+.chinese-radio .el-radio__inner {
+  border-color: #CCCCCC !important;
+  background-color: transparent !important;
+}
+
+/* 2. 悬停状态：边框变金色 */
+.chinese-radio .el-radio:hover .el-radio__inner {
+  border-color: #D4AC0D !important;
+}
+
+/* 3. 选中状态：实心红圆 */
+.chinese-radio .el-radio__input.is-checked .el-radio__inner {
+  background-color: #C0392B !important;
+  border-color: #C0392B !important;
+  animation: radioSpring 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes radioSpring {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 4. 隐藏选中时的内部白点 */
+.chinese-radio .el-radio__input.is-checked .el-radio__inner::after {
+  display: none !important;
+}
+
+/* 5. 选中时的文字颜色变红 */
+.chinese-radio .el-radio__input.is-checked + .el-radio__label {
+  color: #C0392B !important;
+  font-weight: bold !important;
+}
+
+/* 6. 未选中时的文字颜色 */
+.chinese-radio .el-radio__label {
+  font-family: 'Noto Serif SC', serif;
+  color: #2C3E50;
 }
 </style>

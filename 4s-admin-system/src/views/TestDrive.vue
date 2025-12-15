@@ -124,9 +124,25 @@
             >取消</el-button>
 
             <el-button link class="action-btn edit" @click="openDialog(scope.row)">编辑</el-button>
+            
+            <el-button link class="action-btn delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.currentPage"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="pagination.total"
+          background
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <!-- 弹窗 -->
@@ -159,15 +175,17 @@
         </el-form-item>
         
         <el-form-item label="预约时间" prop="appointmentTime">
-          <el-date-picker
-            v-model="form.appointmentTime"
-            type="datetime"
-            placeholder="选择日期时间"
-            format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 100%"
-            popper-class="chinese-popper"
-          />
+          <el-config-provider :locale="locale">
+            <el-date-picker
+              v-model="form.appointmentTime"
+              type="datetime"
+              placeholder="选择日期时间"
+              format="YYYY年MM月DD日 HH:mm"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              style="width: 100%"
+              popper-class="chinese-date-picker"
+            />
+          </el-config-provider>
         </el-form-item>
         
         <el-form-item label="接待人员" prop="userId">
@@ -211,9 +229,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import request from '../utils/request'
 import { Search, Plus, Calendar, EditPen, Select, Refresh } from '@element-plus/icons-vue'
+
+const locale = zhCn
 
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -221,6 +242,12 @@ const tableData = ref([])
 const formRef = ref(null)
 const carOptions = ref([])   
 const userOptions = ref([])  
+
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})  
 
 const filters = reactive({ keyword: '', status: '' })
 const form = ref({ id: null, customerName: '', phone: '', intendedVehicleModel: '', appointmentTime: '', userId: '', remark: '', status: 0 })
@@ -257,9 +284,24 @@ const getStatusClass = (status) => {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await request.get('/test-drive')
-    if (res && res.data) tableData.value = res.data
-    else tableData.value = []
+    const res = await request.get('/test-drive', {
+      params: {
+        pageNum: pagination.currentPage,
+        pageSize: pagination.pageSize
+      }
+    })
+    if (res && res.data) {
+      if (Array.isArray(res.data)) {
+        tableData.value = res.data
+        pagination.total = res.data.length
+      } else {
+        tableData.value = res.data.records || res.data.list || []
+        pagination.total = Number(res.data.total) || 0
+      }
+    } else {
+      tableData.value = []
+      pagination.total = 0
+    }
   } catch (e) {
     ElMessage.error('获取列表失败')
   } finally {
@@ -286,11 +328,26 @@ const filteredData = computed(() => {
   })
 })
 
-const handleSearch = () => { loadData() }
+const handleSearch = () => { 
+  pagination.currentPage = 1
+  loadData() 
+}
 
 const handleReset = () => {
   filters.keyword = ''
   filters.status = ''
+  pagination.currentPage = 1
+  loadData()
+}
+
+const handleSizeChange = (val) => {
+  pagination.pageSize = val
+  pagination.currentPage = 1
+  loadData()
+}
+
+const handleCurrentChange = (val) => {
+  pagination.currentPage = val
   loadData()
 }
 
@@ -355,200 +412,324 @@ const updateStatus = async (row, newStatus) => {
   } catch (e) { }
 }
 
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm(`确认删除预约记录 "${row.customerName}" 吗？`, '警告', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    const res = await request.get('/delete', { params: { id: row.id } })
+    if (res && res.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res?.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
 onMounted(() => {
   loadData()
   loadOptions()
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
 
+$vermilion: #C0392B;
+$imperial-gold: #D4AC0D;
+$ink-black: #2C3E50;
+$border-color: #E5E0D5;
+
 .chinese-style-container {
-  --chinese-red: #C0392B;
-  --chinese-gold: #D4AC0D;
-  --chinese-ink: #2C3E50;
-  --chinese-border: #E5E0D5;
-  
-  min-height: 100vh;
-  padding: 20px;
-  position: relative;
-  background-color: #F5F2EA;
-}
+  .chinese-card {
+    background: #fff;
+    border: 1px solid $border-color;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    position: relative;
+    background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
+    animation: cardEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.3s ease;
 
-.font-song { font-family: 'Noto Serif SC', 'SimSun', serif; font-weight: bold; }
-.num-font { font-family: 'Times New Roman', serif; letter-spacing: 0.5px; }
+    &::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      border: 1px solid rgba($imperial-gold, 0.2);
+      pointer-events: none;
+      z-index: 0;
+    }
+  }
 
-.ink-bg {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-image: 
-    linear-gradient(rgba(245, 242, 234, 0.9), rgba(245, 242, 234, 0.9)),
-    url('https://www.transparenttextures.com/patterns/rice-paper-2.png'); 
-  z-index: 0;
-  pointer-events: none;
-}
+  @keyframes cardEnter {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.02) translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
 
-.chinese-card {
-  position: relative;
-  z-index: 1;
-  border: 1px solid var(--chinese-border);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 4px 20px rgba(44, 62, 80, 0.08);
-  border-radius: 4px;
-}
+  .action-bar {
+    position: relative;
+    z-index: 1;
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--chinese-gold);
-  margin-bottom: 25px;
-}
+    :deep(.el-form-item) {
+      margin-right: 20px;
+      margin-bottom: 10px;
+    }
+  }
 
-.header-left { display: flex; align-items: center; gap: 15px; }
+  .chinese-input {
+    width: 180px;
+  }
 
-.stamp-box {
-  width: 48px; height: 48px;
-  border: 3px solid var(--chinese-red);
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 4px;
-  background-color: rgba(192, 57, 43, 0.05);
-}
-.stamp-text {
-  color: var(--chinese-red);
-  font-family: 'LiSu', 'SimSun', serif;
-  font-size: 24px;
-  font-weight: bold;
-}
+  .card-header {
+    margin-bottom: 18px;
+    border-bottom: 1px dashed $border-color;
+    padding-bottom: 10px;
 
-.title-text {
-  font-size: 22px;
-  color: var(--chinese-ink);
-  font-family: 'Noto Serif SC', serif;
-  letter-spacing: 2px;
-  font-weight: 700;
-}
+    .title-text {
+      font-weight: bold;
+      color: $ink-black;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 16px;
+    }
+  }
 
-.decoration-line {
-  height: 20px;
-  flex-grow: 1;
-  margin-left: 30px;
-  background-image: linear-gradient(90deg, transparent 50%, var(--chinese-border) 50%);
-  background-size: 10px 100%;
-  opacity: 0.5;
-}
+  .chinese-btn-vermilion {
+    background-color: $vermilion;
+    border-color: $vermilion;
+    border-radius: 2px;
+    font-family: 'Noto Serif SC';
 
-.chinese-btn {
-  border-radius: 2px;
-  font-family: 'Noto Serif SC', serif;
-  font-weight: 600;
-  margin-left: 12px !important;
-  opacity: 1 !important;
-  transition: none;
-}
-.chinese-btn:first-child { margin-left: 0 !important; }
+    &:hover {
+      background-color: darken($vermilion, 8%);
+    }
+  }
 
-.chinese-btn.primary, .chinese-btn.primary:hover, .chinese-btn.primary:focus {
-  background-color: #2C3E50 !important;
-  border-color: #2C3E50 !important;
-  color: #fff !important;
-  opacity: 1 !important;
-}
+  .chinese-btn-default {
+    border-radius: 2px;
 
-.chinese-btn.gold, .chinese-btn.gold:hover, .chinese-btn.gold:focus {
-  background-color: #D4AC0D !important;
-  border-color: #D4AC0D !important;
-  color: #fff !important;
-}
+    &:hover {
+      color: $imperial-gold;
+      border-color: $imperial-gold;
+      background-color: #FEF9E7;
+    }
+  }
 
-.chinese-btn.plain, .chinese-btn.plain:hover, .chinese-btn.plain:focus {
-  background-color: transparent !important;
-  border: 1px solid #2C3E50 !important;
-  color: #2C3E50 !important;
-}
+  .chinese-btn-gold {
+    background-color: $imperial-gold;
+    border-color: $imperial-gold;
+    border-radius: 2px;
+    font-family: 'Noto Serif SC';
 
-.chinese-btn.vermilion, .chinese-btn.vermilion:hover, .chinese-btn.vermilion:focus {
-  background-color: #C0392B !important;
-  border-color: #C0392B !important;
-  color: #fff !important;
-  letter-spacing: 2px;
-  padding-left: 25px; padding-right: 25px;
-  box-shadow: none !important;
-}
+    &:hover {
+      background-color: darken($imperial-gold, 8%);
+    }
+  }
 
-.dialog-footer { text-align: center; padding-bottom: 10px; }
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
 
-:deep(.chinese-input .el-input__wrapper),
-:deep(.chinese-select .el-input__wrapper) {
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--chinese-ink) !important;
-  border-radius: 0;
-  background: transparent;
-  padding-left: 0;
-}
-:deep(.el-input__inner) {
-  font-family: 'Noto Serif SC', serif;
-  color: var(--chinese-ink);
-}
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: $ink-black;
+      border-left: 4px solid $vermilion;
+      padding-left: 10px;
+    }
+  }
 
-.chinese-table {
-  border: 1px solid var(--chinese-border);
-  background: transparent;
-}
-:deep(.chinese-header th) {
-  background-color: #F9F7F0 !important;
-  color: var(--chinese-ink) !important;
-  font-family: 'Noto Serif SC', serif;
-  font-weight: bold;
-  border-bottom: 1px solid var(--chinese-gold) !important;
-}
+  :deep(.chinese-table) {
+    --el-table-header-bg-color: #F9F7F0;
+    --el-table-border-color: #EAECEE;
+    z-index: 1;
+    animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-.ink-text { color: var(--chinese-ink); font-size: 15px; }
-.time-wrapper { display: flex; align-items: center; gap: 6px; color: #555; }
-.gold-icon { color: var(--chinese-gold); }
+    @keyframes tableEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.98) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
 
-.status-seal {
-  display: inline-block;
-  padding: 4px 12px;
-  border: 2px solid;
-  border-radius: 4px;
-  font-family: 'LiSu', serif;
-  font-size: 14px;
-  transform: rotate(-5deg);
-  font-weight: bold;
-}
-.seal-gold { color: var(--chinese-gold); border-color: var(--chinese-gold); }
-.seal-blue { color: #2980B9; border-color: #2980B9; }
-.seal-red  { color: var(--chinese-red); border-color: var(--chinese-red); }
-.seal-gray { color: #7F8C8D; border-color: #7F8C8D; border-style: dashed;}
+    .chinese-th {
+      color: $ink-black;
+      font-weight: bold;
+      font-family: 'Noto Serif SC', serif;
+      border-bottom: 2px solid $imperial-gold !important;
+      font-size: 15px;
+    }
 
-.action-btn { font-family: 'Noto Serif SC', serif; font-weight: 600; }
-.action-btn.confirm { color: var(--chinese-ink); }
-.action-btn.finish { color: var(--chinese-red); }
-.action-btn.cancel { color: #95A5A6; }
-.action-btn:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .el-table__body tr {
+      background-color: transparent;
+      transition: all 0.3s;
+      animation: rowEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
 
-.cloud-pattern {
-  height: 20px;
-  background: url('data:image/svg+xml;utf8,<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20 20c-5 0-8-5-10-10S5 0 0 0h40c-5 0-8 5-10 10s-5 10-10 10z" fill="%23D4AC0D" fill-opacity="0.2"/></svg>') repeat-x;
-}
-.cloud-pattern.top { margin-bottom: 20px; transform: rotate(180deg); }
-.cloud-pattern.bottom { margin-top: 20px; }
+    .el-table__body tr:nth-child(1) { animation-delay: 0.1s; }
+    .el-table__body tr:nth-child(2) { animation-delay: 0.2s; }
+    .el-table__body tr:nth-child(3) { animation-delay: 0.3s; }
+    .el-table__body tr:nth-child(n+4) { animation-delay: 0.4s; }
 
-:global(.chinese-dialog .el-dialog__header) {
-  border-bottom: 1px solid var(--chinese-border);
-  margin-right: 0;
-  text-align: center;
-}
-:global(.chinese-dialog .el-dialog__title) {
-  font-family: 'Noto Serif SC', serif;
-  color: var(--chinese-ink);
-  font-weight: bold;
-}
-:global(.chinese-popper .el-select-dropdown__item.selected) {
-  color: var(--chinese-red) !important;
-  font-weight: bold;
+    @keyframes rowEnter {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .el-table__body tr:hover>td {
+      background-color: rgba(254, 249, 231, 0.8) !important;
+      cursor: pointer;
+    }
+
+    .el-table__body tr:hover .cell {
+      color: $ink-black;
+      font-weight: 600;
+      transform: scale(1.02);
+      text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    .el-table__body tr td.el-table-fixed-column--left,
+    .el-table__body tr td.el-table-fixed-column--right,
+    .el-table__header th.el-table-fixed-column--left,
+    .el-table__header th.el-table-fixed-column--right {
+      background-color: #fff;
+      z-index: 10;
+    }
+
+    &.el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--left,
+    &.el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--right {
+      background-color: #fafafa;
+    }
+
+    .el-table__body tr:hover>td.el-table-fixed-column--left,
+    .el-table__body tr:hover>td.el-table-fixed-column--right {
+      background-color: #FEF9E7 !important;
+    }
+  }
+
+  .status-seal {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 2px solid;
+    border-radius: 4px;
+    font-family: 'LiSu', serif;
+    font-size: 14px;
+    transform: rotate(-5deg);
+    font-weight: bold;
+    animation: sealAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), sealPulse 0.4s ease-in-out 0.5s infinite;
+
+    &.seal-blue {
+      color: #2980B9;
+      border-color: #2980B9;
+    }
+
+    &.seal-red {
+      color: $vermilion;
+      border-color: $vermilion;
+      border-style: dashed;
+    }
+
+    &.seal-gray {
+      color: #7F8C8D;
+      border-color: #7F8C8D;
+      border-style: dashed;
+    }
+  }
+
+  @keyframes sealAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotate(-15deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0);
+    }
+  }
+
+  @keyframes sealPulse {
+    0%, 100% {
+      transform: scale(1) rotate(-5deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(-5deg);
+    }
+  }
+
+  .btn-link-primary {
+    color: #34495E;
+    font-weight: bold;
+
+    &:hover {
+      color: $vermilion;
+    }
+  }
+
+  .btn-link-danger {
+    color: $vermilion;
+    font-weight: bold;
+
+    &:hover {
+      color: darken($vermilion, 10%);
+    }
+  }
+
+  .pagination-wrapper {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    animation: paginationFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    :deep(.el-pagination.is-background .el-pager li.is-active) {
+      background-color: $vermilion !important;
+    }
+  }
+
+  @keyframes paginationFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 </style>

@@ -461,19 +461,22 @@ const handleDelete = async (row) => {
 
 .chinese-style-container {
   --chinese-red: #C0392B;
-  /* 朱砂红 */
   --chinese-gold: #D4AC0D;
-  /* 帝王金 */
   --chinese-ink: #2C3E50;
-  /* 水墨黑 */
   --chinese-border: #E5E0D5;
-  /* 边框色 */
-
   min-height: 100vh;
   padding: 20px;
   position: relative;
-  background-color: #F5F2EA;
-  /* 米色底 */
+  background: linear-gradient(-45deg, #F5F2EA, #F9F7F0, #F5F2EA, #F9F7F0);
+  background-size: 400% 400%;
+  animation: bgGradient 15s ease infinite;
+  overflow-x: hidden;
+}
+
+@keyframes bgGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .action-btn.delete { color: var(--chinese-red); }
@@ -517,9 +520,31 @@ const handleDelete = async (row) => {
   position: relative;
   z-index: 1;
   border: 1px solid var(--chinese-border);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 4px 20px rgba(44, 62, 80, 0.08);
   border-radius: 4px;
+  animation: cardEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: all 0.3s ease;
+}
+
+@keyframes cardEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.chinese-card:hover {
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+  transform: translateY(-2px);
 }
 
 /* 标题区 */
@@ -530,6 +555,18 @@ const handleDelete = async (row) => {
   padding-bottom: 20px;
   border-bottom: 2px solid var(--chinese-gold);
   margin-bottom: 25px;
+  animation: headerEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes headerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-left {
@@ -548,14 +585,57 @@ const handleDelete = async (row) => {
   justify-content: center;
   border-radius: 4px;
   background-color: rgba(192, 57, 43, 0.05);
+  animation: stampBounce 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes stampBounce {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+.stamp-box::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: stampShine 3s ease-in-out infinite;
+}
+
+@keyframes stampShine {
+  0%, 100% {
+    transform: rotate(45deg) translate(-100%, -100%);
+  }
+  50% {
+    transform: rotate(45deg) translate(100%, 100%);
+  }
 }
 
 .stamp-text {
   color: var(--chinese-red);
   font-family: 'LiSu', 'SimSun', serif;
-  /* 隶书 */
   font-size: 24px;
   font-weight: bold;
+  position: relative;
+  z-index: 1;
+  animation: stampTextGlow 2s ease-in-out infinite;
+}
+
+@keyframes stampTextGlow {
+  0%, 100% {
+    text-shadow: 0 0 0 rgba(192, 57, 43, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 8px rgba(192, 57, 43, 0.5);
+  }
 }
 
 .title-text {
@@ -564,6 +644,18 @@ const handleDelete = async (row) => {
   font-family: 'Noto Serif SC', serif;
   letter-spacing: 2px;
   font-weight: 700;
+  animation: titleSlideIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes titleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 回纹装饰线 */
@@ -574,6 +666,16 @@ const handleDelete = async (row) => {
   background-image: linear-gradient(90deg, transparent 50%, var(--chinese-border) 50%);
   background-size: 10px 100%;
   opacity: 0.5;
+  animation: lineGlow 3s ease-in-out infinite;
+}
+
+@keyframes lineGlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* ================================================= */
@@ -586,7 +688,39 @@ const handleDelete = async (row) => {
   font-weight: 600;
   margin-left: 12px !important;
   opacity: 1 !important;
-  transition: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  animation: buttonSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes buttonSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chinese-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.chinese-btn:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .chinese-btn:first-child {
@@ -601,6 +735,12 @@ const handleDelete = async (row) => {
   border-color: #2C3E50 !important;
   color: #fff !important;
   opacity: 1 !important;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+}
+
+.chinese-btn.primary:hover {
+  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.4);
+  transform: translateY(-2px);
 }
 
 /* 2. 新增按钮 (帝王金) */
@@ -610,6 +750,12 @@ const handleDelete = async (row) => {
   background-color: #D4AC0D !important;
   border-color: #D4AC0D !important;
   color: #fff !important;
+  box-shadow: 0 4px 12px rgba(212, 172, 13, 0.3);
+}
+
+.chinese-btn.gold:hover {
+  box-shadow: 0 8px 20px rgba(212, 172, 13, 0.4);
+  transform: translateY(-2px);
 }
 
 /* 3. 重置按钮 (空心黑字) */
@@ -619,6 +765,11 @@ const handleDelete = async (row) => {
   background-color: transparent !important;
   border: 1px solid #2C3E50 !important;
   color: #2C3E50 !important;
+}
+
+.chinese-btn.plain:hover {
+  background-color: rgba(44, 62, 80, 0.05) !important;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.2);
 }
 
 /* 4. 确认按钮 (朱砂红) */
@@ -631,7 +782,12 @@ const handleDelete = async (row) => {
   letter-spacing: 2px;
   padding-left: 25px;
   padding-right: 25px;
-  box-shadow: none !important;
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
+}
+
+.chinese-btn.vermilion:hover {
+  box-shadow: 0 8px 20px rgba(192, 57, 43, 0.4);
+  transform: translateY(-2px);
 }
 
 /* ================================================= */
@@ -660,6 +816,18 @@ const handleDelete = async (row) => {
 .chinese-table {
   border: 1px solid var(--chinese-border);
   background: transparent;
+  animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes tableEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 :deep(.chinese-header th) {
@@ -668,6 +836,53 @@ const handleDelete = async (row) => {
   font-family: 'Noto Serif SC', serif;
   font-weight: bold;
   border-bottom: 1px solid var(--chinese-gold) !important;
+  animation: headerColumnEnter 0.5s ease-out;
+  position: relative;
+}
+
+@keyframes headerColumnEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.el-table__row) {
+  animation: rowEnter 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: all 0.3s ease;
+}
+
+:deep(.el-table__row:nth-child(1)) { animation-delay: 0.1s; }
+:deep(.el-table__row:nth-child(2)) { animation-delay: 0.2s; }
+:deep(.el-table__row:nth-child(3)) { animation-delay: 0.3s; }
+:deep(.el-table__row:nth-child(4)) { animation-delay: 0.4s; }
+:deep(.el-table__row:nth-child(5)) { animation-delay: 0.5s; }
+:deep(.el-table__row:nth-child(n+6)) { animation-delay: 0.6s; }
+
+@keyframes rowEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+:deep(.el-table__body tr:hover) {
+  background-color: rgba(212, 172, 13, 0.08) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.12);
+}
+
+:deep(.el-table__body tr:hover td) {
+  color: var(--chinese-ink);
+  text-shadow: 0 0 2px rgba(212, 172, 13, 0.3);
 }
 
 .ink-text {
@@ -696,6 +911,47 @@ const handleDelete = async (row) => {
   font-size: 14px;
   transform: rotate(-5deg);
   font-weight: bold;
+  animation: sealAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+@keyframes sealAppear {
+  from {
+    opacity: 0;
+    transform: rotate(-45deg) scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-5deg) scale(1);
+  }
+}
+
+.status-seal::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: sealShine 3s infinite;
+}
+
+@keyframes sealShine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.status-seal:hover {
+  animation: sealPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes sealPulse {
+  0% { transform: rotate(-5deg) scale(1); }
+  50% { transform: rotate(-5deg) scale(1.1); }
+  100% { transform: rotate(-5deg) scale(1.15); }
 }
 
 .seal-gold {
@@ -723,22 +979,74 @@ const handleDelete = async (row) => {
 .action-btn {
   font-family: 'Noto Serif SC', serif;
   font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: actionButtonEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  display: inline-block;
+  cursor: pointer;
+  position: relative;
+}
+
+@keyframes actionButtonEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.action-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+
+.action-btn:hover::after {
+  width: 100%;
 }
 
 .action-btn.confirm {
   color: var(--chinese-ink);
 }
 
+.action-btn.confirm:hover {
+  color: var(--chinese-gold);
+  text-shadow: 0 0 4px rgba(212, 172, 13, 0.4);
+}
+
 .action-btn.finish {
   color: var(--chinese-red);
+}
+
+.action-btn.finish:hover {
+  color: #A93226;
+  text-shadow: 0 0 4px rgba(192, 57, 43, 0.3);
+  transform: scale(1.05);
 }
 
 .action-btn.cancel {
   color: #95A5A6;
 }
 
+.action-btn.cancel:hover {
+  color: #5D6D7B;
+  transform: scale(1.05);
+}
+
 .action-btn.edit {
   color: #7F8C8D;
+}
+
+.action-btn.edit:hover {
+  color: var(--chinese-gold);
+  transform: scale(1.05);
 }
 
 .action-btn:hover {
@@ -750,11 +1058,35 @@ const handleDelete = async (row) => {
 .cloud-pattern {
   height: 20px;
   background: url('data:image/svg+xml;utf8,<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20 20c-5 0-8-5-10-10S5 0 0 0h40c-5 0-8 5-10 10s-5 10-10 10z" fill="%23D4AC0D" fill-opacity="0.2"/></svg>') repeat-x;
+  animation: cloudFloat 2s ease-in-out infinite;
+}
+
+@keyframes cloudFloat {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-2px);
+  }
 }
 
 .cloud-pattern.top {
   margin-bottom: 20px;
   transform: rotate(180deg);
+  animation: cloudFloatReverse 2s ease-in-out infinite;
+}
+
+@keyframes cloudFloatReverse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: rotate(180deg) translateY(0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: rotate(180deg) translateY(2px);
+  }
 }
 
 .cloud-pattern.bottom {
@@ -765,12 +1097,64 @@ const handleDelete = async (row) => {
   border-bottom: 1px solid var(--chinese-border);
   margin-right: 0;
   text-align: center;
+  animation: dialogHeaderSlideDown 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes dialogHeaderSlideDown {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
 }
 
 :global(.chinese-dialog .el-dialog__title) {
   font-family: 'Noto Serif SC', serif;
   color: var(--chinese-ink);
   font-weight: bold;
+  animation: dialogTitleGlow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes dialogTitleGlow {
+  0%, 100% {
+    text-shadow: none;
+  }
+  50% {
+    text-shadow: 0 0 8px rgba(212, 172, 13, 0.4);
+  }
+}
+
+:global(.chinese-dialog .el-dialog__close) {
+  animation: closeButtonAppear 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes closeButtonAppear {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+:global(.chinese-dialog .el-dialog__close:hover) {
+  animation: closeButtonSpin 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes closeButtonSpin {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(180deg) scale(1.1);
+  }
 }
 
 :global(.chinese-popper .el-select-dropdown__item.selected) {
@@ -785,15 +1169,91 @@ const handleDelete = async (row) => {
   justify-content: center;
   position: relative;
   z-index: 1;
+  animation: paginationFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes paginationFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.el-pagination.is-background .el-pager li) {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:deep(.el-pagination.is-background .el-pager li:hover) {
+  transform: scale(1.1);
 }
 
 :deep(.el-pagination.is-background .el-pager li.is-active) {
   background-color: var(--chinese-red) !important;
+  animation: pageActivePulse 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes pageActivePulse {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+:deep(.el-pagination .btn-prev),
+:deep(.el-pagination .btn-next) {
+  transition: all 0.3s ease;
+}
+
+:deep(.el-pagination .btn-prev:hover),
+:deep(.el-pagination .btn-next:hover) {
+  color: var(--chinese-red);
+  transform: scale(1.15);
 }
 
 /* 表单布局 */
 .chinese-form-layout {
   padding: 0 20px;
+  animation: formLayoutEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes formLayoutEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.chinese-form-layout .el-form-item) {
+  animation: formItemEnter 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+:deep(.chinese-form-layout .el-form-item:nth-child(1)) { animation-delay: 0s; }
+:deep(.chinese-form-layout .el-form-item:nth-child(2)) { animation-delay: 0.1s; }
+:deep(.chinese-form-layout .el-form-item:nth-child(3)) { animation-delay: 0.2s; }
+:deep(.chinese-form-layout .el-form-item:nth-child(n+4)) { animation-delay: 0.3s; }
+
+@keyframes formItemEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 :deep(.chinese-form-layout .el-input__wrapper),
@@ -804,24 +1264,93 @@ const handleDelete = async (row) => {
   border-radius: 0;
   background-color: transparent;
   padding-left: 0;
-  transition: border-color 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :deep(.chinese-form-layout .el-input__wrapper:hover),
 :deep(.chinese-form-layout .el-input__wrapper.is-focus),
 :deep(.chinese-form-layout .el-select__wrapper:hover),
-:deep(.chinese-form-layout .el-select__wrapper.is-focus) {
+:deep(.chinese-form-layout .el-select__wrapper.is-focus),
+:deep(.chinese-form-layout .el-textarea__inner:hover),
+:deep(.chinese-form-layout .el-textarea__inner:focus) {
   border-bottom-color: var(--chinese-gold) !important;
+  background-color: rgba(212, 172, 13, 0.03);
+  box-shadow: inset 0 -2px 0 rgba(212, 172, 13, 0.2) !important;
 }
 
 :deep(.chinese-form-layout .el-input__inner) {
   font-family: 'Noto Serif SC', serif;
   color: var(--chinese-ink);
+  transition: all 0.2s ease;
 }
 
 :deep(.chinese-form-layout .el-form-item__label) {
   font-family: 'Noto Serif SC', serif;
   color: var(--chinese-ink);
   font-weight: bold;
+  animation: labelSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes labelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+:global(.chinese-dialog .el-dialog__body) {
+  animation: dialogBodyFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-delay: 0.1s;
+  animation-fill-mode: both;
+}
+
+@keyframes dialogBodyFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+:global(.chinese-dialog .el-dialog__footer) {
+  animation: dialogFooterSlideUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation-delay: 0.15s;
+  animation-fill-mode: both;
+}
+
+@keyframes dialogFooterSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:global(.chinese-dialog .el-button) {
+  font-family: 'Noto Serif SC', serif;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:global(.chinese-dialog .el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+:global(.chinese-dialog .el-button.is-primary) {
+  background-color: var(--chinese-red) !important;
+  border-color: var(--chinese-red) !important;
+}
+
+:global(.chinese-dialog .el-button.is-primary:hover) {
+  background-color: #A93226 !important;
+  border-color: #A93226 !important;
 }
 </style>

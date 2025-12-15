@@ -33,7 +33,7 @@
 
           <div class="form-footer">
             <el-checkbox v-model="remember" class="chinese-checkbox">记住我</el-checkbox>
-            <div>
+            <div class="links-box">
               <router-link to="/register" class="link-text">注册账号</router-link>
               <el-link :underline="false" class="link-text">忘记密码？</el-link>
             </div>
@@ -110,6 +110,7 @@ const handleLogin = async () => {
   align-items: center;
   background-color: var(--bg-color);
   background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
+  overflow: hidden;
 }
 
 .login-wrapper {
@@ -117,17 +118,17 @@ const handleLogin = async () => {
   height: 550px;
   display: flex;
   background: var(--rice-paper);
-  border-radius: 8px; /* 圆角改小，更方正 */
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(44, 62, 80, 0.15);
   border: 1px solid #E5E0D5;
+  animation: wrapperEnter 1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 左侧海报区 */
 .login-banner {
   flex: 1.2;
   position: relative;
-  /* 使用更具中国风的图片：建筑、山水 */
   background: url('https://images.unsplash.com/photo-1542300057-b02674e2d4d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'); 
   background-size: cover;
   background-position: center;
@@ -135,13 +136,26 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   color: white;
+  overflow: hidden;
 }
 
-/* 遮罩层，让文字更清晰，且带点墨色 */
+/* 缓慢缩放背景图效果 */
+.login-banner::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: inherit;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  animation: bgZoom 20s infinite alternate;
+}
+
 .mask-layer {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
   background: linear-gradient(135deg, rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.6));
+  z-index: 1;
 }
 
 .banner-content {
@@ -151,6 +165,7 @@ const handleLogin = async () => {
   border: 2px solid rgba(255,255,255,0.3);
   padding: 40px;
   backdrop-filter: blur(2px);
+  animation: fadeIn 1s 0.5s backwards;
 }
 
 .brand {
@@ -170,6 +185,7 @@ const handleLogin = async () => {
   color: #fff;
   border: 2px solid rgba(255,255,255,0.2);
   box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+  animation: stampDrop 0.8s 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) backwards;
 }
 
 .brand h1 {
@@ -179,6 +195,7 @@ const handleLogin = async () => {
   letter-spacing: 4px;
   color: var(--chinese-gold);
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  animation: slideUp 0.8s 1s backwards;
 }
 
 .slogan {
@@ -189,6 +206,7 @@ const handleLogin = async () => {
   font-weight: 300;
   border-top: 1px solid rgba(255,255,255,0.3);
   padding-top: 10px;
+  animation: slideUp 0.8s 1.2s backwards;
 }
 
 /* 右侧表单区 */
@@ -199,11 +217,15 @@ const handleLogin = async () => {
   flex-direction: column;
   justify-content: center;
   background-image: radial-gradient(var(--chinese-gold) 1px, transparent 1px);
-  background-size: 20px 20px; /* 点阵纹理 */
+  background-size: 20px 20px;
   background-color: var(--rice-paper);
 }
 
-.form-header { margin-bottom: 30px; text-align: center; }
+.form-header { 
+  margin-bottom: 30px; 
+  text-align: center; 
+  animation: slideDown 0.8s 0.4s backwards;
+}
 .form-header h2 {
   margin: 0 0 10px;
   font-size: 28px;
@@ -212,7 +234,7 @@ const handleLogin = async () => {
 }
 .form-header p { margin: 0; color: #7f8c8d; font-size: 14px; }
 
-/* 输入框改造：底部横线风格 */
+/* 输入框改造 */
 :deep(.chinese-form .el-input__wrapper) {
   background-color: transparent !important;
   box-shadow: none !important;
@@ -228,14 +250,27 @@ const handleLogin = async () => {
   color: var(--chinese-ink);
   font-family: 'Noto Serif SC', serif;
 }
-/* 图标颜色 */
 :deep(.chinese-form .el-input__prefix-inner) { color: var(--chinese-ink); }
+
+/* 表单项动画 */
+.chinese-form .el-form-item {
+  animation: slideUp 0.6s backwards;
+}
+.chinese-form .el-form-item:nth-child(1) { animation-delay: 0.6s; }
+.chinese-form .el-form-item:nth-child(2) { animation-delay: 0.7s; }
+.chinese-form .el-form-item:last-child { animation-delay: 0.9s; } /* Button */
 
 .form-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  animation: fadeIn 0.8s 0.8s backwards;
+}
+
+.links-box {
+  display: flex;
+  align-items: center;
 }
 
 .link-text {
@@ -254,7 +289,7 @@ const handleLogin = async () => {
   border-color: var(--chinese-red);
 }
 
-/* 按钮改造：印章风格 */
+/* 按钮改造 */
 .submit-btn {
   width: 100%;
   padding: 22px 0;
@@ -266,10 +301,50 @@ const handleLogin = async () => {
   border: none;
   border-radius: 4px;
   transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-btn:hover {
-  background: #A93226; /* 深红 */
+  background: #A93226;
   box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active {
+  transform: translateY(1px);
+}
+
+/* 动画定义 */
+@keyframes wrapperEnter {
+  from { opacity: 0; transform: scale(0.95) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stampDrop {
+  0% { opacity: 0; transform: scale(3); }
+  60% { opacity: 1; transform: scale(1); }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bgZoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
 }
 </style>
