@@ -13,18 +13,21 @@
           </div>
           <span class="title-text">预约管理 · 雅集</span>
         </div>
-        <!-- 回纹装饰线 -->
+        <!-- 回纹装饰区 -->
         <div class="header-right decoration-line"></div>
       </div>
 
-      <!-- 操作栏 -->
+      <!-- 操作区 -->
       <div class="action-bar">
         <el-form :inline="true" :model="filters" class="chinese-form">
-          <el-form-item label="寻访客">
+          <el-form-item label="寻访名">
             <el-input 
               v-model="filters.keyword" 
               placeholder="姓名或联系方式" 
               class="chinese-input"
+              clearable
+              @keyup.enter="handleSearch"
+              @clear="handleSearch"
             >
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
@@ -36,6 +39,7 @@
               class="chinese-select" 
               style="width: 140px"
               popper-class="chinese-popper"
+              @change="handleSearch"
             >
               <el-option label="全部状态" value="" />
               <el-option label="待确认" :value="0" />
@@ -45,7 +49,7 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <!-- 按钮组 -->
+            <!-- 按钮区 -->
             <el-button class="chinese-btn primary" @click="handleSearch">
               <el-icon><Search /></el-icon> 查询
             </el-button>
@@ -257,7 +261,7 @@ const rules = {
   phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
   intendedVehicleModel: [{ required: true, message: '请选择意向车型', trigger: 'change' }],
   appointmentTime: [{ required: true, message: '请选择预约时间', trigger: 'change' }],
-  userId: [{ required: true, message: '请选择接待人', trigger: 'change' }],
+  userId: [{ required: true, message: '请选择接待', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
@@ -364,12 +368,12 @@ const openDialog = (row = null) => {
         data.appointmentTime = `${y}-${pad(m)}-${pad(d)} ${pad(h)}:${pad(min)}:${pad(s || 0)}`
     }
 
-    // 2. 车型转 Number
+    // 2. 车型转Number
     if (data.intendedVehicleModel) {
       data.intendedVehicleModel = Number(data.intendedVehicleModel)
     }
     
-    // 3. 用户ID转 String
+    // 3. 用户ID转String
     if (data.userId) {
       data.userId = String(data.userId)
     }

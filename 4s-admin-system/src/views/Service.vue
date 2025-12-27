@@ -21,7 +21,7 @@
       <div class="action-bar">
         <el-form :inline="true" :model="filters" class="chinese-form">
           <el-form-item label="车牌">
-            <el-input v-model="filters.plate" placeholder="请输入车牌" class="chinese-input" @keyup.enter="handleSearch">
+            <el-input v-model="filters.plate" placeholder="请输入车牌" class="chinese-input" clearable @keyup.enter="handleSearch" @clear="handleSearch">
               <template #prefix><el-icon>
                   <Search />
                 </el-icon></template>
@@ -30,11 +30,12 @@
 
           <el-form-item label="状态">
             <el-select v-model="filters.status" placeholder="全部" class="chinese-select" style="width: 140px"
-              popper-class="chinese-popper">
+              popper-class="chinese-popper" @change="handleSearch">
               <el-option label="全部状态" value="" />
               <el-option label="待维修" :value="1" />
               <el-option label="维修中" :value="2" />
-              <el-option label="已完工" :value="3" />
+              <el-option label="已派工" :value="3" />
+              <el-option label="已完成" :value="4" />
             </el-select>
           </el-form-item>
 
@@ -61,10 +62,82 @@
         </el-form>
       </div>
 
-      <!-- 3. 表格区域 -->
-      <el-table :data="tableData" style="width: 100%" class="chinese-table" header-row-class-name="chinese-header"
-        v-loading="loading">
-        <el-table-column prop="orderNo" label="工单编号" width="160">
+      <!-- 3A. 移动端卡片列表 -->
+      <div class="mobile-only mobile-card-list" v-loading="loading">
+        <div 
+          v-for="item in tableData" 
+          :key="item.id" 
+          class="service-card mobile-card"
+        >
+          <!-- 卡片内容 -->
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">车牌号</span>
+              <span class="value font-song">{{ item.plate }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">车主</span>
+              <span class="value">{{ item.owner }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">故障描述</span>
+              <span class="value issue-text">{{ item.issue || '-' }}</span>
+            </div>
+          </div>
+
+          <!-- 卡片底部操作按钮 -->
+          <div class="card-actions">
+            <!-- 状态标签 -->
+            <div :class="['status-seal', getStatusClass(item.status)]" style="margin-right: 8px;">
+              {{ getStatusText(item.status) }}
+            </div>
+            <el-button 
+              v-if="item.status === 1 && !item.mechanicId" 
+              size="small" 
+              type="warning"
+              @click="handleDispatch(item)"
+            >
+              派工
+            </el-button>
+            <el-button 
+              v-if="item.status === 2" 
+              size="small" 
+              type="success"
+              @click="updateStatus(item, 4)"
+            >
+              完工结算
+            </el-button>
+            <el-button 
+              size="small"
+              @click="viewDetail(item)"
+            >
+              详情
+            </el-button>
+            <el-button 
+              size="small" 
+              type="danger"
+              @click="handleDelete(item)"
+            >
+              删除
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <el-empty v-if="!loading && tableData.length === 0" description="暂无维修工单" />
+      </div>
+
+      <!-- 3. 表格区域 - 桌面端 -->
+      <div class="table-wrapper">
+        <el-table 
+          :data="tableData" 
+          style="width: 100%" 
+          class="chinese-table desktop-only" 
+          header-row-class-name="chinese-header"
+          v-loading="loading"
+        >
+
+        <el-table-column prop="orderNo" label="工单号" width="140">
           <template #default="scope">
             <span class="num-font">{{ scope.row.orderNo }}</span>
           </template>
@@ -79,21 +152,11 @@
 
         <el-table-column prop="owner" label="车主" width="120">
           <template #default="scope">
-            <span class="ink-text">{{ scope.row.owner }}</span>
+            <span class="ink-text">{{ scope.row.owner || '-' }}</span>
           </template>
         </el-table-column>
 
-        <!-- 新增：车型列 -->
-        <el-table-column prop="carModel" label="车型/车款" min-width="160" show-overflow-tooltip>
-          <template #default="scope">
-            <span class="ink-text">{{ scope.row.carModel || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="issue" label="故障描述" show-overflow-tooltip />
-
-        <!-- 创建时间列 -->
-        <el-table-column label="创建时间" width="200">
+        <el-table-column label="创建时间" width="180">
           <template #default="scope">
             <div class="time-wrapper">
               <el-icon class="gold-icon">
@@ -104,13 +167,13 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="进厂时间" width="200">
+        <el-table-column label="更新时间" width="180">
           <template #default="scope">
             <div class="time-wrapper">
               <el-icon class="gold-icon">
                 <Timer />
               </el-icon>
-              <span class="num-font">{{ formatTime(scope.row.entryTime) }}</span>
+              <span class="num-font">{{ formatTime(scope.row.updateTime) }}</span>
             </div>
           </template>
         </el-table-column>
@@ -124,21 +187,25 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="scope">
-            <el-button v-if="scope.row.status === 1" link class="action-btn confirm"
-              @click="updateStatus(scope.row, 2)">
-              开始维修
+            <el-button v-if="scope.row.status === 1 && !scope.row.mechanicId" link class="action-btn dispatch"
+              @click="handleDispatch(scope.row)">
+              <el-icon style="margin-right: 2px"><SetUp /></el-icon>派工
             </el-button>
-            <el-button v-if="scope.row.status === 2" link class="action-btn finish" @click="updateStatus(scope.row, 3)">
-              完工结算
+            <el-button v-if="scope.row.status === 2" link class="action-btn finish" @click="updateStatus(scope.row, 4)">
+              <el-icon style="margin-right: 2px"><Select /></el-icon>完工结算
             </el-button>
-            <el-button link class="action-btn edit" @click="viewDetail(scope.row)">详情</el-button>
-            <!-- 新增：删除按钮 -->
-            <el-button link class="action-btn delete" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button link class="action-btn edit" @click="viewDetail(scope.row)">
+              <el-icon style="margin-right: 2px"><View /></el-icon>详情
+            </el-button>
+            <el-button link class="action-btn delete" @click="handleDelete(scope.row)">
+              <el-icon style="margin-right: 2px"><Delete /></el-icon>删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <!-- 4. 分页区域 -->
       <div class="pagination-wrapper">
@@ -148,21 +215,17 @@
       </div>
     </el-card>
 
-    <!-- 5. 弹窗 -->
+    <!-- 登记/编辑工单弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" class="chinese-dialog"
       :close-on-click-modal="false">
       <div class="cloud-pattern top"></div>
 
-      <el-form :model="form" label-width="100px" class="chinese-form-layout">
-        <!-- 仅在编辑时显示工单编号 -->
-        <el-form-item label="工单编号" v-if="isEdit">
-          <el-input v-model="form.orderNo" placeholder="自动生成" disabled />
-        </el-form-item>
+      <el-form label-width="100px" class="chinese-form-layout">
         <el-form-item label="车牌号">
-          <el-input v-model="form.plate" placeholder="例如：京A88888" />
+          <el-input v-model="form.plate" placeholder="例如：京A12345" />
         </el-form-item>
-        <el-form-item label="车型/车款">
-          <el-input v-model="form.carModel" placeholder="例如：A4L 45 TFSI" />
+        <el-form-item label="车型">
+          <el-input v-model="form.carModel" placeholder="例如：奥迪A6L" />
         </el-form-item>
         <el-form-item label="车主姓名">
           <el-input v-model="form.owner" placeholder="例如：张三" />
@@ -174,8 +237,14 @@
           <el-select v-model="form.status" placeholder="请选择" style="width: 100%">
             <el-option label="待维修" :value="1" />
             <el-option label="维修中" :value="2" />
-            <el-option label="已完工" :value="3" />
+            <el-option label="已完成" :value="3" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="开始维修时间" v-if="isEdit && form.startRepairTime">
+          <el-input :value="formatTime(form.startRepairTime)" disabled />
+        </el-form-item>
+        <el-form-item label="结束维修时间" v-if="isEdit && form.endRepairTime">
+          <el-input :value="formatTime(form.endRepairTime)" disabled />
         </el-form-item>
       </el-form>
 
@@ -190,6 +259,40 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 派工选择弹窗 -->
+    <el-dialog v-model="dispatchDialogVisible" title="选择维修师傅" width="400px" class="chinese-dialog"
+      :close-on-click-modal="false">
+      <div class="cloud-pattern top"></div>
+      
+      <el-form label-width="100px" class="chinese-form-layout">
+        <el-form-item label="工单编号">
+          <el-input :value="currentDispatchOrder?.orderNo" disabled />
+        </el-form-item>
+        <el-form-item label="维修师傅">
+          <el-select v-model="selectedMechanicId" placeholder="请选择维修师傅" style="width: 100%"
+            :loading="mechanicLoading">
+            <el-option 
+              v-for="mechanic in mechanicList" 
+              :key="mechanic.id" 
+              :label="mechanic.name" 
+              :value="mechanic.id" 
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <div class="cloud-pattern bottom"></div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="chinese-btn plain" @click="dispatchDialogVisible = false">取消</el-button>
+          <el-button class="chinese-btn vermilion" @click="confirmDispatch" :loading="dispatchLoading">
+            <el-icon style="margin-right: 4px"><Select /></el-icon> 确认派工
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -198,7 +301,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
 // 引入图标
-import { Search, Plus, Tools, Timer, Select, Refresh, EditPen } from '@element-plus/icons-vue'
+import { Search, Plus, Tools, Timer, Select, Refresh, EditPen, SetUp, View, Delete } from '@element-plus/icons-vue'
 
 // --- 状态定义 ---
 const loading = ref(false)
@@ -209,6 +312,14 @@ const isEdit = ref(false)
 const dialogTitle = ref('登记新维修工单')
 
 const tableData = ref([])
+
+// 派工相关状态
+const dispatchDialogVisible = ref(false)
+const dispatchLoading = ref(false)
+const mechanicLoading = ref(false)
+const mechanicList = ref([])
+const selectedMechanicId = ref(null)
+const currentDispatchOrder = ref(null)
 
 
 
@@ -231,10 +342,12 @@ const form = reactive({
   issue: '',
   status: 1,
   entryTime: null,
-  createTime: null
+  createTime: null,
+  startRepairTime: null,
+  endRepairTime: null
 })
 
-// 时间格式化（兼容 [y,m,d,h,min] 或 [y,m,d,h,min,s]）
+// 时间格式化（兼容 [y,m,d,h,min] 和 [y,m,d,h,min,s]）
 const formatTime = (timeArray) => {
   if (!Array.isArray(timeArray) || timeArray.length < 5) return '-'
   const [y, m, d, h, min, s] = timeArray
@@ -245,14 +358,15 @@ const formatTime = (timeArray) => {
 
 // 状态文字映射
 const getStatusText = (status) => {
-  const map = { 1: '待维修', 2: '维修中', 3: '已完工' }
+  const map = { 1: '待维修', 2: '维修中', 3: '已派工', 4: '已完成' }
   return map[status] || '未知'
 }
 
-// 状态样式映射 (印章颜色)
+// 状态样式映射(印章颜色)
 const getStatusClass = (status) => {
-  if (status === 3) return 'seal-red'   // 已完工 - 红色
+  if (status === 4) return 'seal-red'   // 已完成 - 红色
   if (status === 2) return 'seal-blue'  // 维修中 - 蓝色
+  if (status === 3) return 'seal-green' // 已派工 - 绿色
   return 'seal-gold'                    // 待维修 - 金色
 }
 
@@ -311,13 +425,13 @@ const handleReset = () => {
   loadData()
 }
 
-// 分页：页码变化
+// 分页：页码变更
 const handleCurrentChange = (val) => {
   queryParams.pageNum = val
   loadData()
 }
 
-// 分页：每页数量变化
+// 分页：每页数量变更
 const handleSizeChange = (val) => {
   queryParams.pageSize = val
   queryParams.pageNum = 1
@@ -381,6 +495,8 @@ const viewDetail = (row) => {
   form.status = row.status
   form.entryTime = row.entryTime
   form.createTime = row.createTime
+  form.startRepairTime = row.startRepairTime
+  form.endRepairTime = row.endRepairTime
   dialogVisible.value = true
 }
 
@@ -453,6 +569,60 @@ const handleDelete = async (row) => {
   }
 }
 
+// 派工操作 - 打开选择维修师傅弹窗
+const handleDispatch = async (row) => {
+  currentDispatchOrder.value = row
+  selectedMechanicId.value = null
+  dispatchDialogVisible.value = true
+  
+  // 获取维修师傅列表
+  mechanicLoading.value = true
+  try {
+    const res = await request.get('/users/selectMachincer')
+    if (res.code === 200) {
+      mechanicList.value = res.data || []
+    } else {
+      ElMessage.error('获取维修师傅列表失败')
+    }
+  } catch (error) {
+    console.error('获取维修师傅列表失败', error)
+    ElMessage.error('获取维修师傅列表失败')
+  } finally {
+    mechanicLoading.value = false
+  }
+}
+
+// 确认派工
+const confirmDispatch = async () => {
+  if (!selectedMechanicId.value) {
+    ElMessage.warning('请选择维修师傅')
+    return
+  }
+  
+  dispatchLoading.value = true
+  try {
+    const res = await request.get('/services/sendUser', {
+      params: {
+        orderId: currentDispatchOrder.value.id,
+        mechanicId: selectedMechanicId.value
+      }
+    })
+    if (res.code === 200) {
+      ElMessage.success(res.message || '派工成功')
+      dispatchDialogVisible.value = false
+      // 派工成功后刷新列表
+      loadData()
+    } else {
+      ElMessage.error(res.message || '派工失败')
+    }
+  } catch (error) {
+    console.error('派工失败', error)
+    ElMessage.error('派工失败')
+  } finally {
+    dispatchLoading.value = false
+  }
+}
+
 </script>
 
 <style scoped>
@@ -470,7 +640,7 @@ const handleDelete = async (row) => {
   background: linear-gradient(-45deg, #F5F2EA, #F9F7F0, #F5F2EA, #F9F7F0);
   background-size: 400% 400%;
   animation: bgGradient 15s ease infinite;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 @keyframes bgGradient {
@@ -658,7 +828,7 @@ const handleDelete = async (row) => {
   }
 }
 
-/* 回纹装饰线 */
+/* 回纹装饰区 */
 .decoration-line {
   height: 20px;
   flex-grow: 1;
@@ -727,7 +897,7 @@ const handleDelete = async (row) => {
   margin-left: 0 !important;
 }
 
-/* 1. 查询按钮 (水墨黑) */
+/* 1. 查询按钮 (水墨风) */
 .chinese-btn.primary,
 .chinese-btn.primary:hover,
 .chinese-btn.primary:focus {
@@ -797,7 +967,7 @@ const handleDelete = async (row) => {
   padding-bottom: 10px;
 }
 
-/* 输入框样式覆盖 (底部横线) */
+/* 输入框样式覆盖(底部横线) */
 :deep(.chinese-input .el-input__wrapper),
 :deep(.chinese-select .el-input__wrapper) {
   box-shadow: none !important;
@@ -812,11 +982,41 @@ const handleDelete = async (row) => {
   color: var(--chinese-ink);
 }
 
+/* 表格容器 - 实现水平滚动条在列表下方 */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-bottom: 10px;
+}
+
+/* 表格容器滚动条样式 */
+.table-wrapper::-webkit-scrollbar {
+  height: 12px;
+  background-color: #e5e0d5;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #c0392b;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background-color: #e5e0d5;
+  border-radius: 6px;
+}
+
 /* 表格样式 */
 .chinese-table {
   border: 1px solid var(--chinese-border);
   background: transparent;
   animation: tableEnter 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  min-width: 1540px; /* 确保表格有足够宽度触发滚动 */
 }
 
 @keyframes tableEnter {
@@ -964,6 +1164,11 @@ const handleDelete = async (row) => {
   border-color: #2980B9;
 }
 
+.seal-green {
+  color: #27AE60;
+  border-color: #27AE60;
+}
+
 .seal-red {
   color: var(--chinese-red);
   border-color: var(--chinese-red);
@@ -1046,6 +1251,26 @@ const handleDelete = async (row) => {
 
 .action-btn.edit:hover {
   color: var(--chinese-gold);
+  transform: scale(1.05);
+}
+
+.action-btn.dispatch {
+  color: #E67E22;
+}
+
+.action-btn.dispatch:hover {
+  color: #D35400;
+  text-shadow: 0 0 4px rgba(230, 126, 34, 0.4);
+  transform: scale(1.05);
+}
+
+.action-btn.delete {
+  color: #E74C3C;
+}
+
+.action-btn.delete:hover {
+  color: #C0392B;
+  text-shadow: 0 0 4px rgba(231, 76, 60, 0.4);
   transform: scale(1.05);
 }
 
@@ -1352,5 +1577,85 @@ const handleDelete = async (row) => {
 :global(.chinese-dialog .el-button.is-primary:hover) {
   background-color: #A93226 !important;
   border-color: #A93226 !important;
+}
+
+/* ==================== 移动端适配样式 ==================== */
+@media screen and (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+  
+  /* 移动端操作栏优化 */
+  .action-bar :deep(.el-form) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .action-bar :deep(.el-form-item) {
+    margin-right: 0;
+    margin-bottom: 12px;
+    width: 100%;
+  }
+  
+  .action-bar :deep(.el-input),
+  .action-bar :deep(.el-select) {
+    width: 100% !important;
+  }
+  
+  .action-bar :deep(.el-button) {
+    width: 100%;
+    margin: 0 0 8px 0;
+  }
+  
+  /* 卡片内文本优化 */
+  .service-card .issue-text {
+    word-break: break-all;
+    line-height: 1.5;
+    max-height: 3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  /* 状态印章在移动端缩小 */
+  .service-card .status-seal {
+    transform: scale(0.85) rotate(-5deg);
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+  
+  /* 分页组件移动端适配 */
+  .pagination-wrapper {
+    padding: 12px;
+    overflow-x: auto;
+  }
+  
+  .pagination-wrapper :deep(.el-pagination) {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .pagination-wrapper :deep(.el-pagination__total),
+  .pagination-wrapper :deep(.el-pagination__sizes) {
+    margin-bottom: 8px;
+  }
+}
+
+/* 桌面端隐藏移动端内容 */
+@media screen and (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+  
+  .desktop-only {
+    display: table !important;
+  }
 }
 </style>

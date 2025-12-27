@@ -6,6 +6,10 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   // 从 localStorage 读取缓存的用户信息，避免刷新丢失
   const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+  // 用户的菜单权限列表
+  const userMenus = ref(JSON.parse(localStorage.getItem('userMenus') || '[]'))
+  // 用户的角色信息
+  const userRole = ref(JSON.parse(localStorage.getItem('userRole') || '{}'))
 
   
   // 登录动作 (对接后端)
@@ -13,11 +17,18 @@ export const useUserStore = defineStore('user', () => {
     try {
       const res = await request.post('/login', { username, password })
       if (res.code === 200) {
-        token.value = res.token
-        userInfo.value = res.userInfo
+        // 提取返回的数据
+        const data = res.data || {}
+        token.value = data.token || res.token
+        userInfo.value = data.userInfo || res.userInfo
+        userMenus.value = data.menus || []
+        userRole.value = data.role || {}
         
-        localStorage.setItem('token', res.token)
-        localStorage.setItem('userInfo', JSON.stringify(res.userInfo))
+        // 保存到 localStorage
+        localStorage.setItem('token', token.value)
+        localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+        localStorage.setItem('userMenus', JSON.stringify(userMenus.value))
+        localStorage.setItem('userRole', JSON.stringify(userRole.value))
         return true
       }
       return false
@@ -29,8 +40,12 @@ export const useUserStore = defineStore('user', () => {
   function logout() {
     token.value = ''
     userInfo.value = {}
+    userMenus.value = []
+    userRole.value = {}
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
+    localStorage.removeItem('userMenus')
+    localStorage.removeItem('userRole')
   }
   
   // 更新个人信息
@@ -59,7 +74,27 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { token, userInfo, login, logout, updateProfile, register } // 记得导出 register
+  // 检查用户是否有权限访问某个菜单
+  function hasMenuPermission(menuPath) {
+    // 如果没有菜单权限数据，默认有权限（向后兼容）
+    if (!userMenus.value || userMenus.value.length === 0) {
+      return true
+    }
+    // 检查菜单列表中是否包含该路径
+    return userMenus.value.some(menu => menu.path === menuPath || menu.name === menuPath)
+  }
+
+  return { 
+    token, 
+    userInfo, 
+    userMenus, 
+    userRole, 
+    login, 
+    logout, 
+    updateProfile, 
+    register,
+    hasMenuPermission
+  }
 })
 
 

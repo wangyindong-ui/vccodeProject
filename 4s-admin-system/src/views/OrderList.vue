@@ -1,6 +1,6 @@
 <template>
   <div class="order-list-view">
-    <!-- 1. 顶部搜索区 (保持不变) -->
+    <!-- 1. 顶部搜索区(保持不变) -->
     <div class="chinese-card filter-section">
       <div class="card-title-bar">
         <span class="title-text">:: 订单检索 ::</span>
@@ -8,11 +8,11 @@
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="订单编号">
           <el-input v-model="searchForm.orderNo" placeholder="输入单号..." class="chinese-input" clearable
-            @keyup.enter="handleSearch" />
+            @keyup.enter="handleSearch" @clear="handleSearch" />
         </el-form-item>
         <el-form-item label="客户雅称">
           <el-input v-model="searchForm.customer" placeholder="客户姓名" class="chinese-input" clearable
-            @keyup.enter="handleSearch" />
+            @keyup.enter="handleSearch" @clear="handleSearch" />
         </el-form-item>
         <el-form-item label="订单状态">
           <el-select v-model="searchForm.status" placeholder="全部状态" class="chinese-select" clearable
@@ -21,7 +21,7 @@
             <el-option label="已支付" value="paid" />
             <el-option label="服务中" value="servicing" />
             <el-option label="已完成" value="done" />
-            <el-option label="已退单" value="refunded" />
+            <el-option label="已退款" value="refunded" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -71,12 +71,12 @@
         <el-table-column prop="carModel" label="关联车型" min-width="180" show-overflow-tooltip />
         <el-table-column prop="totalAmount" label="金额 (元)" width="140">
           <template #default="scope">
-            <span class="price-text">¥ {{ formatMoney(scope.row.totalAmount) }}</span>
+            <span class="price-text">￥ {{ formatMoney(scope.row.totalAmount) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="salesperson" label="销售顾问" width="110" align="center">
           <template #default="scope">
-            <span style="color: #7f8c8d;">{{ scope.row.salesmanName || '—' }}</span>
+            <span style="color: #7f8c8d;">{{ scope.row.salesmanName || '无' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="当前状态" width="120">
@@ -95,11 +95,14 @@
             <span style="color: #999; font-style: italic;">{{ scope.row.remark || '无备注' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="scope">
-            <el-button link class="btn-link-primary" @click="viewDetail(scope.row)">详情</el-button>
-            <el-button link class="btn-link-danger" @click="handleDelete(scope.row)">删除</el-button>
-            <el-button link class="btn-link-gold" @click="handleDispatch(scope.row)">派工</el-button>
+            <el-button link class="btn-link-primary" @click="viewDetail(scope.row)">
+              <el-icon style="margin-right: 4px"><View /></el-icon>详情
+            </el-button>
+            <el-button link class="btn-link-danger" @click="handleDelete(scope.row)">
+              <el-icon style="margin-right: 4px"><Delete /></el-icon>删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -132,14 +135,20 @@
 
           <el-form-item label="销售顾问" prop="salesman">
             <el-select v-model="form.salesman" placeholder="请选择销售顾问" :loading="salesmanLoading">
-              <el-option v-for="person in salesmanOptions" :key="person.id" :label="person.name"
+              <el-option v-for="person in salesmanOptions" :key="person.id" :label="person.salesman"
                 :value="person.id" />
             </el-select>
           </el-form-item>
 
           <el-form-item label="关联车型">
-            <el-cascader v-model="form.carModel" :options="carOptions" :props="{ checkStrictly: true }"
-              placeholder="请选择车型" clearable style="width: 100%" />
+            <el-cascader 
+              v-model="form.carModel" 
+              :options="carOptions" 
+              :props="{ checkStrictly: false, emitPath: false }"
+              placeholder="请选择车型" 
+              clearable 
+              style="width: 100%" 
+            />
           </el-form-item>
 
           <el-form-item label="订单金额" prop="totalAmount">
@@ -192,9 +201,9 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { Search, Refresh, Plus, Download, Upload, Select } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Download, Upload, Select, View, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrderList, addOrder, exportOrder, delOrder, dispatchOrder, getLinkCarModels, getSalesmanList, updateOrder } from '../utils/order'
+import { getOrderList, addOrder, exportOrder, delOrder, getLinkCarModels, getSalesmanList, updateOrder } from '../utils/order'
 
 const route = useRoute()
 
@@ -253,7 +262,7 @@ const statusMap = {
   paid: '已支付',
   servicing: '服务中',
   done: '已完成',
-  refunded: '已退单'
+  refunded: '已退款'
 }
 
 onMounted(async () => {
@@ -275,7 +284,7 @@ onMounted(async () => {
     
     if (matchedId) {
       form.carModel = matchedId
-      form.remark = `[系统] 由库存车辆 ${targetModelName} 自动生成`
+      form.remark = `[系统] 由库存车型 ${targetModelName} 自动生成`
     } else {
       ElMessage.warning(`未在关联车型库中找到: ${targetModelName}`)
     }
@@ -461,12 +470,6 @@ const confirmExport = () => {
 const handleDelete = (row) => {
   ElMessageBox.confirm(`确认删除订单 "${row.orderNo}" 吗？`, '警告', { confirmButtonText: '确定删除', type: 'warning' }).then(() => {
     delOrder(row.id).then(() => { ElMessage.success('删除成功'); getList() })
-  })
-}
-
-const handleDispatch = (row) => {
-  ElMessageBox.confirm('确认对此订单进行派工服务吗？', '提示', { confirmButtonText: '确认派工', type: 'info' }).then(() => {
-    dispatchOrder({ id: row.id, status: 'servicing' }).then(() => { ElMessage.success('派工成功'); getList() })
   })
 }
 

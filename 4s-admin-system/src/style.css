@@ -77,3 +77,79 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ========== 全局表格滚动条优化 ========== */
+/* 让表格水平滚动条始终显示在表格底部，分页栏上方 */
+
+/* 表格容器样式 */
+.el-table {
+  overflow: visible !important;
+}
+
+/* 表格主体区域 - 设置水平滚动 */
+.el-table__body-wrapper {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+/* 表格内部滚动容器 */
+.el-table__inner-wrapper {
+  overflow: visible !important;
+}
+
+/* 确保滚动条在表格底部显示 */
+.el-scrollbar__bar.is-horizontal {
+  height: 8px !important;
+  bottom: 0 !important;
+}
+
+/* 固定列的阴影效果优化 */
+.el-table__fixed-right::before,
+.el-table__fixed::before {
+  height: 100%;
+}
+
+/* 自定义滚动条样式 - Webkit浏览器 (Chrome, Safari, Edge) */
+.el-table__body-wrapper::-webkit-scrollbar,
+.el-scrollbar__wrap::-webkit-scrollbar {
+  height: 10px;
+  background-color: #f5f2ea;
+}
+
+.el-table__body-wrapper::-webkit-scrollbar-thumb,
+.el-scrollbar__wrap::-webkit-scrollbar-thumb {
+  background-color: #d4ac0d;
+  border-radius: 5px;
+  border: 2px solid #f5f2ea;
+}
+
+.el-table__body-wrapper::-webkit-scrollbar-thumb:hover,
+.el-scrollbar__wrap::-webkit-scrollbar-thumb:hover {
+  background-color: #c0392b;
+}
+
+.el-table__body-wrapper::-webkit-scrollbar-track,
+.el-scrollbar__wrap::-webkit-scrollbar-track {
+  background-color: #f9f7f0;
+  border-radius: 5px;
+}
+
+/* Element Plus 滚动条组件样式 */
+.el-scrollbar__bar {
+  opacity: 1 !important;
+}
+
+.el-scrollbar__thumb {
+  background-color: #d4ac0d !important;
+  border-radius: 5px;
+}
+
+.el-scrollbar__thumb:hover {
+  background-color: #c0392b !important;
+}
+
+/* 确保表格与分页栏之间有适当间距 */
+.el-table + .pagination-wrapper,
+.chinese-table + .pagination-wrapper {
+  margin-top: 20px;
+}

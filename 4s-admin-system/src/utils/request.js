@@ -6,11 +6,11 @@ import JSONbig from 'json-bigint'
 const JSONbigString = JSONbig({ storeAsString: true })
 
 // 后端服务地址
-const API_BASE_URL = 'http://localhost:8091/api'
+const API_BASE_URL = 'http://192.168.2.151:8091/api'
 
 const service = axios.create({
   baseURL: API_BASE_URL, // 指向 Spring Boot 地址
-  timeout: 50000000,
+  timeout: 30000, // 30秒超时
   
   // 处理后端返回的大数字 ID
   transformResponse: [function (data) {

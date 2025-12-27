@@ -8,7 +8,7 @@
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="角色名称">
           <el-input v-model="searchForm.roleName" placeholder="请输入角色名称" class="chinese-input" clearable
-            style="width: 180px;" @keyup.enter="handleSearch" />
+            style="width: 180px;" @keyup.enter="handleSearch" @clear="handleSearch" />
         </el-form-item>
         <el-form-item label="角色状态">
           <el-select v-model="searchForm.status" placeholder="请选择角色状态" class="chinese-select" clearable

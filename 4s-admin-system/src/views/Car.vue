@@ -8,11 +8,11 @@
       <el-form :inline="true" :model="queryParams" class="search-form">
         <el-form-item label="车辆品牌">
           <el-input v-model="queryParams.brand" placeholder="输入品牌..." class="chinese-input" clearable
-            @keyup.enter="handleSearch" />
+            @keyup.enter="handleSearch" @clear="handleSearch" />
         </el-form-item>
         <el-form-item label="车型名称">
           <el-input v-model="queryParams.model" placeholder="输入车型..." class="chinese-input" clearable
-            @keyup.enter="handleSearch" />
+            @keyup.enter="handleSearch" @clear="handleSearch" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="chinese-btn-vermilion" @click="handleSearch">
@@ -67,9 +67,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="price" label="指导价 (万)" width="140">
+        <el-table-column prop="price" label="指导价(万)" width="140">
           <template #default="scope">
-            <span class="price-text">¥ {{ formatMoney(scope.row.price) }}</span>
+            <span class="price-text">￥ {{ formatMoney(scope.row.price) }}</span>
           </template>
         </el-table-column>
 
@@ -118,7 +118,7 @@
           <el-input v-model="form.model" placeholder="例如：A4L" />
         </el-form-item>
         <el-form-item label="车辆颜色">
-          <el-input v-model="form.colorName" placeholder="例如：传奇黑" />
+          <el-input v-model="form.colorName" placeholder="例如：白色" />
         </el-form-item>
         <el-form-item label="指导价(万)">
           <el-input-number v-model="form.price" :precision="2" :step="0.1" :min="0" style="width: 100%" />
@@ -170,7 +170,7 @@ const handleGenerateOrder = (row) => {
   })
 }
 
-// --- 状态变量 ---
+// --- 状态变更 ---
 const loading = ref(false)
 const total = ref(0)
 const dialogVisible = ref(false)
@@ -323,7 +323,7 @@ const getColorCode = (name) => {
   if (n.includes('绿') || n.includes('青')) return '#27AE60'
   if (n.includes('黄') || n.includes('金')) return '#F1C40F'
   if (n.includes('银')) return '#BDC3C7'
-  if (n.includes('灰') || n.includes('钛')) return '#7F8C8D'
+  if (n.includes('灰') || n.includes('檀')) return '#7F8C8D'
   if (n.includes('棕') || n.includes('咖')) return '#6E2C00'
   if (n.includes('紫')) return '#8E44AD'
   return '#95A5A6'

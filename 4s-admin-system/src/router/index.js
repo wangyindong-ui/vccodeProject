@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layout/MainLayout.vue'
 import Login from '../views/Login.vue'
+import { ElMessage } from 'element-plus'
 
 const routes = [
   // 1. 登录页
@@ -60,6 +61,13 @@ const routes = [
         component: () => import('../views/Role.vue'),
         meta: { title: '角色管理' }
       },
+      // --- 新增：角色菜单权限管理（仅管理员可见）---
+      {
+        path: '/role-menu-permission',
+        name: 'RoleMenuPermission',
+        component: () => import('../views/RoleMenuPermission.vue'),
+        meta: { title: '权限管理', requiresAdmin: true }
+      },
       {
         path: '/profile',
         name: 'Profile',
@@ -86,6 +94,13 @@ const routes = [
         name: 'CameraPlayer',
         component: () => import('../views/CameraPlayer.vue'),
         meta: { title: '实时监控' }
+      },
+      // --- 维修师傅工作台 ---
+      {
+        path: '/mechanic-workbench',
+        name: 'MechanicWorkbench',
+        component: () => import('../views/MechanicWorkbench.vue'),
+        meta: { title: '我的工作台' }
       }
     ]
   }
@@ -96,18 +111,87 @@ const router = createRouter({
   routes
 })
 
+// 缓存解析后的用户菜单，避免每次路由跳转都解析 JSON
+let cachedUserMenus = null
+let cachedMenusVersion = null
+
+// 获取用户菜单（带缓存）
+const getUserMenus = () => {
+  const storedMenus = localStorage.getItem('userMenus')
+  // 如果缓存版本不一致，重新解析
+  if (cachedMenusVersion !== storedMenus) {
+    cachedUserMenus = JSON.parse(storedMenus || '[]')
+    cachedMenusVersion = storedMenus
+  }
+  return cachedUserMenus
+}
+
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  // 如果去的是登录页 或 注册页，直接放行
+  
+  // 如果去的是登录页或注册页，直接放行
   if (to.path === '/login' || to.path === '/register') {
+    // 清除菜单缓存（登录/注册时可能需要重新获取）
+    cachedUserMenus = null
+    cachedMenusVersion = null
+    next()
+    return
+  }
+  
+  // 检查是否有token
+  if (!token) {
+    next('/login')
+    return
+  }
+  
+  // 已登录用户，检查菜单权限（使用缓存）
+  const userMenus = getUserMenus()
+  
+  // 如果用户没有菜单权限数据，默认允许访问（向后兼容）
+  if (userMenus.length === 0) {
+    next()
+    return
+  }
+  
+  // 个人中心始终允许访问
+  if (to.path === '/profile') {
+    next()
+    return
+  }
+  
+  // 如果访问根路径或首页，重定向到用户有权限的第一个页面
+  if (to.path === '/' || to.path === '/dashboard') {
+    // 检查用户是否有首页权限
+    const hasDashboardPermission = userMenus.some(menu => menu.path === '/dashboard')
+    if (hasDashboardPermission) {
+      next()
+    } else {
+      // 没有首页权限，跳转到第一个有权限的页面
+      if (userMenus.length > 0) {
+        next(userMenus[0].path)
+      } else {
+        ElMessage.warning('您没有任何菜单权限')
+        next('/profile')
+      }
+    }
+    return
+  }
+  
+  // 检查用户是否有权限访问该路由
+  const hasPermission = userMenus.some(menu => {
+    return menu.path === to.path || to.path.startsWith(menu.path + '/')
+  })
+  
+  if (hasPermission) {
     next()
   } else {
-    // 否则检查是否有token
-    if (!token) {
-      next('/login')
+    ElMessage.warning('您没有权限访问该页面')
+    // 重定向到用户有权限的第一个页面
+    if (userMenus.length > 0) {
+      next(userMenus[0].path)
     } else {
-      next()
+      next('/profile')
     }
   }
 })

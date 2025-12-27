@@ -1,0 +1,336 @@
+/* ============================================
+   页面级响应式样式 - 适用于所有业务页面
+   ============================================ */
+
+/* 移动端通用样式 */
+@media screen and (max-width: 768px) {
+  /* 页面容器 */
+  .car-list-view,
+  .chinese-style-container,
+  .service-container,
+  .inventory-container,
+  .order-list-container,
+  .test-drive-container,
+  .dictionary-container,
+  .role-container,
+  .profile-container,
+  .mechanic-workbench-container {
+    padding: 10px !important;
+  }
+  
+  /* 统计卡片 - 移动端改为单列 */
+  .el-row .el-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+  
+  /* 统计面板 */
+  .stat-panel {
+    padding: 15px !important;
+    margin-bottom: 10px;
+  }
+  
+  .stat-icon {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 20px !important;
+  }
+  
+  .stat-value {
+    font-size: 22px !important;
+  }
+  
+  .stat-label {
+    font-size: 13px !important;
+  }
+  
+  /* 中式卡片 */
+  .chinese-card {
+    margin-bottom: 15px;
+    padding: 12px !important;
+  }
+  
+  .card-title-bar {
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+  
+  .title-text {
+    font-size: 15px !important;
+  }
+  
+  .section-title {
+    font-size: 15px !important;
+  }
+  
+  /* 搜索表单区域 */
+  .filter-section {
+    padding: 12px !important;
+  }
+  
+  .search-form .el-form-item {
+    display: block !important;
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+  
+  /* 表格区域 */
+  .table-section {
+    padding: 12px !important;
+  }
+  
+  .table-header {
+    flex-direction: column !important;
+    gap: 10px;
+    margin-bottom: 15px !important;
+  }
+  
+  .table-header .left-panel,
+  .table-header .right-panel {
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* 中式表格样式 */
+  .chinese-table {
+    font-size: 12px !important;
+  }
+  
+  .chinese-table .el-table__header th {
+    padding: 8px 5px !important;
+    font-size: 12px !important;
+  }
+  
+  .chinese-table .el-table__body td {
+    padding: 8px 5px !important;
+    font-size: 12px !important;
+  }
+  
+  /* 品牌/车型文字 */
+  .brand-text,
+  .model-text {
+    font-size: 12px !important;
+  }
+  
+  /* 价格显示 */
+  .price-text {
+    font-size: 12px !important;
+  }
+  
+  /* 库存显示 */
+  .stock-text {
+    font-size: 12px !important;
+  }
+  
+  /* 状态印章 */
+  .status-seal,
+  .status-tag {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+  }
+  
+  /* 按钮组 */
+  .chinese-btn-vermilion,
+  .chinese-btn-gold,
+  .chinese-btn-default,
+  .chinese-btn-ink {
+    padding: 10px 15px !important;
+    font-size: 13px !important;
+  }
+  
+  /* 操作链接 */
+  .btn-link-primary,
+  .btn-link-gold,
+  .btn-link-danger {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+  }
+  
+  /* 颜色标签 */
+  .color-tag {
+    font-size: 12px !important;
+  }
+  
+  .color-tag .dot {
+    width: 8px !important;
+    height: 8px !important;
+  }
+  
+  /* 分页器 */
+  .el-pagination {
+    justify-content: center !important;
+    margin-top: 15px !important;
+  }
+  
+  /* 图表卡片 */
+  .chart-card {
+    margin-bottom: 15px;
+  }
+  
+  .card-header {
+    flex-direction: column !important;
+    gap: 10px;
+    align-items: flex-start !important;
+  }
+  
+  .chart-wrapper,
+  .chart-container {
+    height: 250px !important;
+  }
+  
+  /* 印章样式 */
+  .stamp-box {
+    width: 35px !important;
+    height: 35px !important;
+  }
+  
+  .stamp-text {
+    font-size: 11px !important;
+  }
+  
+  /* 对话框内表单 */
+  .el-dialog .el-form-item {
+    display: block !important;
+    margin-bottom: 18px !important;
+  }
+  
+  .el-dialog .el-form-item__label {
+    width: 100% !important;
+    text-align: left !important;
+  }
+  
+  .el-dialog .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* 标签页 */
+  .el-tabs__item {
+    padding: 0 12px !important;
+    font-size: 13px !important;
+  }
+  
+  /* 描述列表 */
+  .el-descriptions__label,
+  .el-descriptions__content {
+    font-size: 13px !important;
+    padding: 8px !important;
+  }
+  
+  /* 时间选择器 */
+  .el-date-editor {
+    width: 100% !important;
+  }
+  
+  /* 头像上传 */
+  .avatar-uploader {
+    width: 100% !important;
+    text-align: center;
+  }
+  
+  .avatar-uploader .el-upload {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  /* 步骤条 */
+  .el-steps {
+    padding: 10px 0 !important;
+  }
+  
+  .el-step__title {
+    font-size: 13px !important;
+  }
+  
+  .el-step__description {
+    font-size: 12px !important;
+  }
+  
+  /* 工作台卡片 */
+  .workbench-card {
+    margin-bottom: 15px;
+    padding: 12px !important;
+  }
+  
+  .work-item {
+    padding: 10px !important;
+    margin-bottom: 10px;
+  }
+  
+  /* 监控视频容器 */
+  .video-container,
+  .camera-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  
+  .video-player {
+    height: 200px !important;
+  }
+}
+
+/* 平板端适配 (769px - 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .el-row .el-col-6 {
+    width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+  
+  .el-row .el-col-8 {
+    width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+  
+  .stat-panel {
+    padding: 16px !important;
+  }
+  
+  .chart-wrapper,
+  .chart-container {
+    height: 280px !important;
+  }
+  
+  .chinese-table {
+    font-size: 13px !important;
+  }
+  
+  /* 监控视频 */
+  .camera-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* 横屏移动设备 */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .el-row .el-col {
+    width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+  
+  .chart-wrapper,
+  .chart-container {
+    height: 220px !important;
+  }
+  
+  .video-player {
+    height: 180px !important;
+  }
+  
+  .camera-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* 大屏优化 */
+@media screen and (min-width: 1920px) {
+  .chinese-style-container,
+  .car-list-view,
+  .service-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+}

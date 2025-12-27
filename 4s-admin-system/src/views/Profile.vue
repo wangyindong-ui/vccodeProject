@@ -864,4 +864,208 @@ const resetAvatarUpload = () => {
   border: 3px solid var(--blue-porcelain);
 }
 
+/* ============================================
+   移动端响应式样式
+   ============================================ */
+@media screen and (max-width: 768px) {
+  .cyan-style-container {
+    min-height: auto;
+  }
+
+  .app-container {
+    padding: 8px;
+  }
+
+  /* 卡片样式优化 */
+  .cyan-card {
+    border-width: 1px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* 头部简化 */
+  .card-header {
+    padding-bottom: 10px;
+    margin-bottom: 0;
+  }
+
+  .jade-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .title-text {
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .cloud-decor {
+    display: none;
+  }
+
+  /* 头像区域优化 */
+  .box-center {
+    padding: 15px 0;
+  }
+
+  .avatar-window {
+    padding: 4px;
+    border-width: 2px;
+  }
+
+  :deep(.avatar-window .el-avatar) {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .user-name {
+    font-size: 18px;
+    margin-top: 10px;
+  }
+
+  .role-badge {
+    font-size: 11px;
+    padding: 3px 12px;
+    margin-top: 8px;
+  }
+
+  /* 用户信息行优化 */
+  .user-bio {
+    padding: 8px 12px 15px;
+  }
+
+  .bio-row {
+    padding: 10px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .bio-label {
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bio-label .teal-icon {
+    font-size: 14px;
+  }
+
+  .bio-value {
+    font-size: 14px;
+    word-break: break-all;
+    padding-left: 18px;
+  }
+
+  /* 标签页优化 */
+  :deep(.cyan-tabs .el-tabs__item) {
+    font-size: 14px;
+    padding: 0 12px;
+  }
+
+  :deep(.cyan-tabs .el-tabs__nav-scroll) {
+    overflow-x: auto;
+  }
+
+  /* 表单优化 */
+  :deep(.cyan-form) {
+    margin-top: 15px !important;
+  }
+
+  :deep(.cyan-form .el-form-item) {
+    margin-bottom: 12px;
+  }
+
+  :deep(.cyan-form .el-form-item__label) {
+    font-size: 13px;
+    padding-right: 8px;
+  }
+
+  :deep(.cyan-input .el-input__inner) {
+    font-size: 14px;
+  }
+
+  /* 按钮优化 */
+  .cyan-btn.primary {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* 头像上传弹窗优化 */
+  :deep(.el-dialog) {
+    width: 90% !important;
+    margin: 10vh auto !important;
+  }
+
+  :deep(.el-dialog__header) {
+    padding: 12px 15px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 15px;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 10px 15px;
+  }
+
+  .avatar-preview-container {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+  }
+
+  .preview-img {
+    max-width: 100px;
+    max-height: 100px;
+  }
+
+  :deep(.avatar-upload .el-icon--upload) {
+    font-size: 48px;
+    margin: 20px 0 10px 0;
+  }
+
+  :deep(.avatar-upload .el-upload__text) {
+    font-size: 13px;
+  }
+
+  /* 禁用部分动画提升性能 */
+  .avatar-window:hover {
+    transform: scale(1.05);
+  }
+
+  .bio-row::before {
+    animation: none;
+  }
+}
+
+/* 超小屏幕优化 */
+@media screen and (max-width: 375px) {
+  .app-container {
+    padding: 5px;
+  }
+
+  :deep(.avatar-window .el-avatar) {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  .user-name {
+    font-size: 16px;
+  }
+
+  .bio-value {
+    font-size: 13px;
+  }
+
+  :deep(.cyan-form .el-form-item__label) {
+    font-size: 12px;
+    width: 70px !important;
+  }
+}
+
 </style>

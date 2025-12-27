@@ -62,8 +62,8 @@
       <!-- 操作栏 -->
       <div class="action-bar">
         <div class="search-group">
-          <el-input v-model="searchKey" placeholder="输入配件名称" class="chinese-input" style="width: 260px"
-            @keyup.enter="handleSearch">
+          <el-input v-model="searchKey" placeholder="输入配件名称" class="chinese-input" style="width: 260px" clearable
+            @keyup.enter="handleSearch" @clear="handleSearch">
             <template #prefix><el-icon>
                 <Search />
               </el-icon></template>
@@ -92,8 +92,8 @@
         </div>
       </div>
 
-      <!-- 表格区域 -->
-      <el-table :data="tableData" style="width: 100%" class="chinese-table" header-row-class-name="chinese-header"
+      <!-- 桌面端表格区域 -->
+      <el-table :data="tableData" style="width: 100%" class="chinese-table desktop-only" header-row-class-name="chinese-header"
         v-loading="loading">
         <el-table-column prop="code" label="编号" width="140">
           <template #default="scope">
@@ -145,6 +145,63 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 移动端卡片视图 -->
+      <div class="mobile-card-list mobile-only" v-loading="loading">
+        <div v-for="item in tableData" :key="item.id" class="inventory-card">
+          <!-- 卡片头部 -->
+          <div class="card-header-mobile">
+            <div class="card-title-row">
+              <span class="item-name">{{ item.name }}</span>
+              <span v-if="item.stock < 10" class="warning-badge">缺货</span>
+            </div>
+            <div class="item-code">编号: {{ item.code }}</div>
+          </div>
+          
+          <!-- 卡片主体信息 -->
+          <div class="card-body-mobile">
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">分类</span>
+                <span class="info-value category-tag">{{ item.category }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">库位</span>
+                <span class="info-value location-tag">{{ item.location }}</span>
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">单价</span>
+                <span class="info-value price-value">¥{{ formatMoney(item.price) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">库存</span>
+                <span class="info-value stock-value" :class="{ 'low-stock': item.stock < 10 }">
+                  {{ item.stock }} {{ item.unit }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 卡片操作按钮 -->
+          <div class="card-actions-mobile">
+            <el-button size="small" class="chinese-btn plain" @click="handleEdit(item)">
+              <el-icon><EditPen /></el-icon> 修缮
+            </el-button>
+            <el-button size="small" class="chinese-btn danger" @click="handleDelete(item)">
+              <el-icon><Delete /></el-icon> 删除
+            </el-button>
+          </div>
+        </div>
+        
+        <!-- 移动端空状态 -->
+        <div v-if="tableData.length === 0 && !loading" class="empty-state-mobile">
+          <el-icon class="empty-icon"><Box /></el-icon>
+          <p>暂无配件数据</p>
+        </div>
+      </div>
 
       <!-- 分页区域 -->
       <div class="pagination-wrapper">
@@ -222,7 +279,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
-import { Search, Plus, Box, Money, Warning, EditPen, Refresh, Select } from '@element-plus/icons-vue'
+import { Search, Plus, Box, Money, Warning, EditPen, Refresh, Select, Delete } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -1034,6 +1091,8 @@ onMounted(() => {
     transform: scale(1.2);
   }
 }
+
+/* Inventory 页面移动端卡片视图已通过 mobile-cards.css 全局样式实现 */
 </style>
 
 <style>

@@ -76,7 +76,16 @@ const handleLogin = async () => {
     const success = await userStore.login(loginForm.value.username, loginForm.value.password)
     if (success) {
       ElMessage.success(`欢迎回来，${userStore.userInfo.name}`)
-      router.push('/dashboard')
+      
+      // 根据用户权限跳转到第一个可访问的页面
+      const userMenus = userStore.userMenus || []
+      if (userMenus.length > 0) {
+        // 跳转到用户有权限的第一个菜单
+        router.push(userMenus[0].path || '/dashboard')
+      } else {
+        // 如果没有菜单权限数据，默认跳转到首页
+        router.push('/dashboard')
+      }
     }
   } catch (error) {
     ElMessage.warning('请正确填写表单')
@@ -113,8 +122,18 @@ const handleLogin = async () => {
   overflow: hidden;
 }
 
+/* 手机端容器适配 */
+@media screen and (max-width: 768px) {
+  .login-container {
+    padding: 0;
+    overflow-y: auto;
+    align-items: flex-start;
+  }
+}
+
 .login-wrapper {
   width: 900px;
+  max-width: 95%;
   height: 550px;
   display: flex;
   background: var(--rice-paper);
@@ -123,6 +142,27 @@ const handleLogin = async () => {
   box-shadow: 0 10px 30px rgba(44, 62, 80, 0.15);
   border: 1px solid #E5E0D5;
   animation: wrapperEnter 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 平板适配 (768px - 1024px) */
+@media screen and (max-width: 1024px) {
+  .login-wrapper {
+    width: 700px;
+    height: 500px;
+  }
+}
+
+/* 手机横屏 (768px以下) */
+@media screen and (max-width: 768px) {
+  .login-wrapper {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    min-height: 80vh;
+    flex-direction: column;
+    border-radius: 12px;
+    margin: 20px;
+  }
 }
 
 /* 左侧海报区 */
@@ -137,6 +177,36 @@ const handleLogin = async () => {
   justify-content: center;
   color: white;
   overflow: hidden;
+}
+
+/* 手机端：隐藏左侧海报或压缩显示 */
+@media screen and (max-width: 768px) {
+  .login-banner {
+    flex: none;
+    min-height: 200px;
+    max-height: 250px;
+  }
+  
+  .banner-content {
+    padding: 20px !important;
+  }
+  
+  .brand h1 {
+    font-size: 24px !important;
+  }
+  
+  .slogan {
+    font-size: 14px !important;
+  }
+  
+  .stamp-box {
+    width: 45px !important;
+    height: 45px !important;
+  }
+  
+  .stamp-box .el-icon {
+    font-size: 20px !important;
+  }
 }
 
 /* 缓慢缩放背景图效果 */
@@ -221,6 +291,21 @@ const handleLogin = async () => {
   background-color: var(--rice-paper);
 }
 
+/* 平板和手机适配 */
+@media screen and (max-width: 1024px) {
+  .login-form-box {
+    padding: 40px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .login-form-box {
+    flex: none;
+    padding: 30px 25px;
+    justify-content: flex-start;
+  }
+}
+
 .form-header { 
   margin-bottom: 30px; 
   text-align: center; 
@@ -233,6 +318,21 @@ const handleLogin = async () => {
   letter-spacing: 2px;
 }
 .form-header p { margin: 0; color: #7f8c8d; font-size: 14px; }
+
+/* 手机端表单标题适配 */
+@media screen and (max-width: 768px) {
+  .form-header {
+    margin-bottom: 20px;
+  }
+  
+  .form-header h2 {
+    font-size: 22px;
+  }
+  
+  .form-header p {
+    font-size: 13px;
+  }
+}
 
 /* 输入框改造 */
 :deep(.chinese-form .el-input__wrapper) {
@@ -252,6 +352,17 @@ const handleLogin = async () => {
 }
 :deep(.chinese-form .el-input__prefix-inner) { color: var(--chinese-ink); }
 
+/* 手机端输入框适配 */
+@media screen and (max-width: 768px) {
+  :deep(.chinese-form .el-input__wrapper) {
+    padding: 8px 0;
+  }
+  
+  :deep(.chinese-form .el-input__inner) {
+    font-size: 15px;
+  }
+}
+
 /* 表单项动画 */
 .chinese-form .el-form-item {
   animation: slideUp 0.6s backwards;
@@ -266,6 +377,31 @@ const handleLogin = async () => {
   align-items: center;
   margin-bottom: 30px;
   animation: fadeIn 0.8s 0.8s backwards;
+}
+
+/* 手机端表单底部适配 */
+@media screen and (max-width: 768px) {
+  .form-footer {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  
+  .links-box {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0 !important;
+  }
+  
+  .link-text {
+    margin-left: 0 !important;
+    font-size: 13px;
+  }
+  
+  .link-text:first-child {
+    margin-right: auto;
+  }
 }
 
 .links-box {
@@ -313,6 +449,15 @@ const handleLogin = async () => {
 
 .submit-btn:active {
   transform: translateY(1px);
+}
+
+/* 手机端按钮适配 */
+@media screen and (max-width: 768px) {
+  .submit-btn {
+    padding: 18px 0;
+    font-size: 16px;
+    letter-spacing: 3px;
+  }
 }
 
 /* 动画定义 */
